@@ -1,40 +1,63 @@
-# 🗺️ 02. Mapa del Sitio y Flujos de Usuario
+# 🗺️ 02. Mapa del Sitio y Flujos de Usuario - Anaxagoras AI
 
-Estructura de páginas, secciones e itinerarios de interacción del visitante.
+Estructura de la aplicación SPA (Single Page Application) para estudiantes y flujos de interacción clave.
 
 ---
 
-## 1. Arquitectura de Información (Sitemap)
+## 1. Arquitectura de Navegación y Pantallas
 
 ```text
-[Inicio / Home]
-├── Hero Section (Impacto visual + UVP + CTA principal)
-├── Prueba Social / Logos de confianza / Estadísticas
-├── Características Principales / Servicios (Features / Solution)
-├── Cómo Funciona (Paso a paso interactivo)
-├── Casos de Éxito / Testimonios
-├── Precios / Planes (o Formulario de cotización)
-├── Preguntas Frecuentes (FAQ interactivo con acordeón)
-└── Footer (Navegación secundaria, legal, redes sociales)
+[Header Superior Global]
+├── Logo & Identidad: Anaxagoras AI (badge de nivel/curso)
+├── Selector de Idioma (Castellano, Català, Galego, Euskera, Valencià)
+├── Configuración de Modelo IA (Botón modal: Local Ollama / Cloud OpenAI)
+└── Conexión Google Account (Avatar de usuario / Botón "Conectar con Google")
 
-[Páginas Secundarias (si aplica)]
-├── /sobre-nosotros
-├── /contacto
-└── /blog / articulos
+[Barra de Navegación Principal (Tabs)]
+├── 📅 1. Agenda (Planificación del tiempo y Google Calendar)
+├── 💡 2. Estudio / Repaso (Tutor Socrático y consolidación activa)
+└── 📝 3. Trabajos (Guía de entregables, Google Drive y esfuerzo autónomo)
+
+[Contenedor de Vistas Principales]
+├── VISTA 1: AGENDA
+│   ├── Calendario semanal / visualizador de bloques de estudio
+│   ├── Próximos exámenes y entregas sincronizadas
+│   └── Creador rápido de sesiones de estudio ("Técnica Pomodoro / Bloques guiados")
+│
+├── VISTA 2: ESTUDIO / REPASO
+│   ├── Selector de Asignatura y Tema
+│   ├── Modo Tutor Socrático (Chat interactivo que hace preguntas de orientación)
+│   ├── Tarjetas de Autoevaluación / Desafío de memoria activa (Active Recall)
+│   └── Medidor de asimilación conceptual (sin respuestas fáciles)
+│
+└── VISTA 3: TRABAJOS Y PROYECTOS
+    ├── Lista de trabajos activos y rúbrica de entrega
+    ├── Asistente paso a paso (1. Lluvia de ideas -> 2. Estructura -> 3. Redacción -> 4. Revisión)
+    ├── Integración con documentos de Google Drive
+    └── "Detector de autonomía": Verificación de que el estudiante redacta con sus propias palabras
 ```
 
 ---
 
 ## 2. Recorridos de Usuario Principales (User Journeys)
 
-### Flujo 1: Visitante casual a Lead / Contacto
-1. **Llegada:** Entra en la Home, lee el titular del Hero y propuesta de valor.
-2. **Exploración:** Hace scroll viendo características y testimonios de confianza.
-3. **Decisión:** Hace clic en el botón principal ("Solicitar Demo", "Comenzar gratis" o "Contactar").
-4. **Conversión:** Rellena el formulario interactivo o agenda una reunión.
-5. **Confirmación:** Recibe feedback visual de éxito instantáneo.
+### Flujo 1: Configuración Inicial y Conexión
+1. El estudiante abre Anaxagoras AI.
+2. Hace clic en **Conectar con Google** para autorizar lectura de calendario y carpetas de trabajos (Google OAuth 2.0).
+3. Accede al modal de **Configuración IA** para definir si usará un modelo local (ej. `http://localhost:11434/v1` de Ollama) o una clave de API OpenAI estándar (guardada de forma segura en memoria o sesión local).
+4. Elige su idioma preferido de interfaz.
 
-### Flujo 2: Búsqueda rápida de respuestas
-1. Navega directamente al FAQ o sección de planes.
-2. Despliega preguntas frecuentes para resolver dudas de precio o soporte.
-3. Activa el CTA secundario.
+### Flujo 2: Organización en la Agenda
+1. El estudiante consulta las entregas y exámenes de la semana.
+2. Pulsa en "Planificar sesión de estudio" para Matemáticas o Historia.
+3. El sistema añade el bloque sugerido y permite sincronizarlo directamente con Google Calendar.
+
+### Flujo 3: Estudio / Repaso con Tutor Socrático
+1. El estudiante indica: *"No entiendo cómo resolver una ecuación de segundo grado"* o *"Quiero repasar la fotosíntesis"*.
+2. El Tutor Socrático no resuelve la tarea: responde con una pregunta de diagnóstico: *"¿Qué información nos da el problema y qué fórmula recuerdas que relacione esas variables?"*.
+3. El estudiante responde y la IA lo guía gradualmente hasta que él mismo llega a la solución.
+
+### Flujo 4: Preparación de Trabajos y Entregables
+1. El alumno crea un nuevo trabajo: *"Monografía sobre Energías Renovables"*.
+2. Conecta un documento de Google Drive o un borrador.
+3. La herramienta desglosa el trabajo en 4 fases autónomas, asegurando que el estudiante investigue, elabore esquemas y redacte sin que la IA genere el texto final por él.

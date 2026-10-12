@@ -5,28 +5,34 @@ Define las tecnologías, dependencias y herramientas para el desarrollo de la ap
 ---
 
 ## 1. Núcleo Tecnológico
-- **Frontend Core:** [ ] HTML5 + Vanilla JS | [ ] Vite + Vanilla JS | [ ] Vite + React / TypeScript | [ ] Next.js | [ ] Otro: _______
-- **Estilos:** [ ] Vanilla CSS (variables CSS) | [ ] TailwindCSS (especificar versión) | [ ] CSS Modules / SASS
-- **Gestor de Paquetes:** [ ] npm | [ ] pnpm | [ ] yarn | [ ] Ninguno (estático puro)
+- **Frontend Core:** HTML5 + Vanilla TypeScript
+- **Estilos:** TailwindCSS
+- **Gestor de Paquetes:** pnpm
 - **Runtime / Entorno:** Node.js LTS
 
 ---
 
 ## 2. Librerías y Dependencias Permitidas
-- **Iconografía:** (ej. Lucide Icons, Heroicons, FontAwesome CDN, SVGs inline)
-- **Fuentes tipográficas:** (ej. Google Fonts: Inter, Plus Jakarta Sans, Outfit)
-- **Animaciones:** (ej. CSS Transitions/Keyframes nativas, GSAP, Motion)
-- **Gestión de Formularios / Estado:** (nativo, react-hook-form, zustand, etc.)
-
+- **Iconografía:** Heroicons
+- **Fuentes tipográficas:** Google Fonts
+- **Animaciones:** Motion
+- **Gestión de Formularios / Estado:** nativo
+- **Flujos de utilización de IA:** LangGraph
+- **Modelos LLM:** Integración Local y Cloud con API estándar Open AI para inferencia.
+- **Calendarios:** Integración con Google Calendar.
+- **Archivos:** Integración con Google Drive.
+- **Autenticación:** Integración con Google Authentication. Oauth 2.0
 ---
 
 ## 3. Entorno de Ejecución Local
-- **Comando de inicio local:** (ej. `npm run dev` o servidor estático local)
-- **Puerto por defecto:** (ej. 3000, 5173, 8080)
-- **Requisitos de build:** (ej. `npm run build`)
+- **Comando de inicio local:** `pnpm run dev`
+- **Puerto por defecto:** 8086
+- **Requisitos de build:** `pnpm run build`
 
 ---
 
 ## 4. Restricciones Técnicas
-- *Evitar librerías pesadas innecesarias.*
-- *Priorizar carga rápida y dependencias mínimas si es un sitio estático/landing.*
+- *Utilizar IndexedDB con librería dexie.js. para almacenamiento de datos locales*
+- *Carga incremental de modulos, definir bundles optimizados*
+- *No almacenar datos sensibles, credenciales, claves API, etc...*
+- *Definir interfaces antes de las implementaciones necesarias*

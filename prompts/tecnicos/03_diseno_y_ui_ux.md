@@ -1,42 +1,34 @@
-# 🎨 03. Diseño Visual y UI/UX
+# 🎨 03. Diseño Visual y UI/UX - Anaxagoras AI
 
-Define las directrices estéticas, tokens de diseño y experiencia de usuario para garantizar un aspecto visual premium e interactivo.
-
----
-
-## 1. Identidad Visual y Estilo
-- **Concepto Estético:** (ej. Minimalismo tecnológico, Dark Mode futurista, Glassmorphism elegante, Editorial contemporáneo)
-- **Modos:** [ ] Solo Modo Oscuro | [ ] Solo Modo Claro | [ ] Soporte Dual (Claro/Oscuro con toggle)
+Directrices estéticas dirigidas a la nueva generación de estudiantes (Gen-Z y Gen-Alpha): limpia, fresca, dinámica y motivadora.
 
 ---
 
-## 2. Paleta de Colores (Tokens)
-- **Fondo Principal (`--bg-primary`):** (ej. `#0b0f19` / Deep dark)
-- **Fondo Secundario / Cards (`--bg-surface`):** (ej. `#111827` / `#1e293b`)
-- **Acento Primario (`--accent-primary`):** (ej. `#6366f1` / Indigo eléctrico)
-- **Acento Secundario (`--accent-secondary`):** (ej. `#06b6d4` / Cyan brillante)
-- **Texto Principal (`--text-primary`):** (ej. `#f9fafb`)
-- **Texto Secundario / Muted (`--text-secondary`):** (ej. `#9ca3af`)
-- **Bordes y Divisores (`--border-subtle`):** (ej. `rgba(255, 255, 255, 0.08)`)
+## 1. Identidad Visual y Sensación
+- **Atmósfera:** "Espacio de Aprendizaje Estimulante" (mezcla de productividad limpia, toques gamificados y estética moderna tipo Notion/Linear adaptada a jóvenes).
+- **Esquinas redondeadas:** `rounded-2xl` y `rounded-3xl` para una sensación amigable, suave y segura.
+- **Micro-interacciones:** Indicadores de estado visuales, botones con hover y active táctil suave, badges con colores de estado.
+
+---
+
+## 2. Paleta de Colores (Tokens Tailwind)
+- **Fondo:** 
+  - Claro: `#f8fafc` (slate-50) con cards `#ffffff`
+  - Oscuro: `#0f172a` (slate-900) con cards `#1e293b` (slate-800)
+- **Acento Primario (Identidad / Acción):** Índigo / Violeta vibrante (`#6366f1` / `#4f46e5`) - Transmite inteligencia, enfoque y modernidad.
+- **Acento Secundario (Logros / Éxito):** Esmeralda fresca (`#10b981`) - Indica progreso, tareas completadas y aciertos.
+- **Acento Terciario (Alerta / Agenda):** Ámbar cálido (`#f59e0b`) - Destaca fechas próximas o recordatorios.
+- **Acento Cuaternario (Creatividad / Trabajos):** Cyan / Celeste (`#06b6d4`) - Para fases de proyectos e investigación.
 
 ---
 
 ## 3. Tipografía
-- **Titulares (Headings):** (ej. `'Outfit', 'Plus Jakarta Sans', sans-serif`)
-- **Cuerpo de Texto (Body):** (ej. `'Inter', -apple-system, BlinkMacSystemFont, sans-serif`)
-- **Monoespaciada / Código:** (ej. `'JetBrains Mono', monospace`)
+- **Titulares:** `Plus Jakarta Sans` o `Outfit` (geométrica, moderna, altamente legible).
+- **Cuerpo y UI:** `Inter` (perfecta legibilidad en textos explicativos y diálogos).
 
 ---
 
-## 4. Breakpoints Responsivos
-- **Móvil:** `< 640px`
-- **Tablet:** `640px - 1024px`
-- **Desktop:** `> 1024px`
-- **Max Width de Contenedor:** `1200px` / `1280px`
-
----
-
-## 5. Microinteracciones y Efectos
-- **Botones:** Efectos hover suaves (`transform: translateY(-2px)`, transiciones de 200ms, sombras dinámicas).
-- **Tarjetas:** Bordes sutiles con iluminación al pasar el cursor o fondos con ligero desenfoque (`backdrop-filter: blur(12px)`).
-- **Transiciones:** Suaves y naturales (`cubic-bezier(0.16, 1, 0.3, 1)`).
+## 4. Las 3 Secciones Visuales
+1. **Agenda:** Tarjetas con bandas de color según prioridad y barra de progreso semanal.
+2. **Estudio / Repaso:** Interfaz conversacional tipo chat socrático con burbujas diferenciadas, indicador "Pensando...", y botón de pista socrática.
+3. **Trabajos:** Tarjetas de proyecto tipo tablero kanban ligero o lista por fases (Planificación, Investigación, Redacción, Revisión) con indicador de porcentaje de autoría propia.
