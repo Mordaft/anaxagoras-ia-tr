@@ -27,3 +27,11 @@ Acompañar al estudiante a lo largo de las 4 fases de creación de un trabajo ac
 ## 🛡️ Auditoría de Autonomía
 Evalúa periódicamente si el estudiante está demostrando comprensión genuina del tema mediante preguntas de control:
 *"¿Cómo le explicarías esta conclusión a un compañero de clase en tus propias palabras?"*
+
+---
+
+## 🎯 Criterios Departamentales de Evaluación según Nivel
+- **Para 1º de ESO (Lengua Castellana - Análisis de oraciones):**
+  - Criterio de éxito: Reconocimiento del predicado y ubicación del **Complemento Verbal** en bloque. No penalizar la ausencia de etiquetas finas (CD, CI, CRV, CPred).
+- **Para 2º de Bachillerato (Lengua Castellana - Análisis sintáctico PAU):**
+  - Criterio de éxito: Clasificación rigurosa de cada complemento verbal y justificación mediante pruebas sintácticas formales (concordancia, pasiva, sustitución). Penalizar no indicar el tipo exacto.

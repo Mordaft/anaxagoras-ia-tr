@@ -26,4 +26,6 @@ export interface ProjectTask {
   driveFiles: DriveAttachment[];
   criteria: AutonomyCriterion[];
   notes: string;
+  gradeKey?: '1eso' | '2batx' | 'both';
+  pedagogicalNote?: string; // Anotación de adaptación al estadio cognitivo de Piaget
 }

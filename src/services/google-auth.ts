@@ -49,10 +49,12 @@ class GoogleAuthService {
       clientId: '',
       user: {
         id: 'google_user_demo_01',
-        name: 'Álvaro Martín (Demo)',
-        email: 'alvaro.estudiante@edu.es',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        gradeLevel: '4º ESO / Secundaria',
+        name: 'Marc Vidal (1º de ESO)',
+        email: 'marc.vidal@ies-catalunya.edu.cat',
+        avatarUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
+        gradeLevel: '1º de ESO (12 años)',
+        gradeKey: '1eso',
+        stageName: 'Operaciones Concretas (Piaget)',
         connectedAt: new Date().toISOString(),
         mode: 'demo'
       },
@@ -96,6 +98,42 @@ class GoogleAuthService {
   public async connectDemo(): Promise<GoogleProfile> {
     this.setDemoState();
     return this.state.user!;
+  }
+
+  public setGradeProfile(grade: '1eso' | '2batx'): void {
+    if (!this.state.user) {
+      this.setDemoState();
+    }
+
+    if (grade === '1eso') {
+      this.state.user = {
+        ...this.state.user!,
+        name: this.state.mode === 'demo' ? 'Marc Vidal (1º de ESO)' : this.state.user!.name,
+        gradeLevel: '1º de ESO (12 años)',
+        gradeKey: '1eso',
+        stageName: 'Operaciones Concretas (Piaget)',
+        avatarUrl: this.state.mode === 'demo' 
+          ? 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80'
+          : this.state.user!.avatarUrl
+      };
+    } else {
+      this.state.user = {
+        ...this.state.user!,
+        name: this.state.mode === 'demo' ? 'Álvaro Martín (2º Bachillerato)' : this.state.user!.name,
+        gradeLevel: '2º de Bachillerato (17-18 años)',
+        gradeKey: '2batx',
+        stageName: 'Operaciones Formales (Piaget)',
+        avatarUrl: this.state.mode === 'demo'
+          ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+          : this.state.user!.avatarUrl
+      };
+    }
+    this.saveState();
+  }
+
+  public toggleGradeProfile(): void {
+    const current = this.state.user?.gradeKey || '1eso';
+    this.setGradeProfile(current === '1eso' ? '2batx' : '1eso');
   }
 
   public async connectRealGoogle(clientId?: string): Promise<GoogleProfile> {
@@ -144,10 +182,12 @@ class GoogleAuthService {
               const userInfo = await userInfoRes.json();
               const profile: GoogleProfile = {
                 id: userInfo.sub || `google_${Date.now()}`,
-                name: userInfo.name || 'Estudiante Google',
-                email: userInfo.email || 'estudiante@gmail.com',
+                name: userInfo.name || 'Álvaro Martín (2º de Bachillerato)',
+                email: userInfo.email || 'alvaro.estudiante@batxillerat.cat',
                 avatarUrl: userInfo.picture || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-                gradeLevel: 'Cuenta Personal / Educativa',
+                gradeLevel: '2º de Bachillerato (17-18 años)',
+                gradeKey: '2batx',
+                stageName: 'Operaciones Formales (Piaget)',
                 connectedAt: new Date().toISOString(),
                 mode: 'real'
               };

@@ -2,6 +2,7 @@ import type { AISettings } from '../types/ai';
 import type { ChatMessage, FlashCard } from '../types/study';
 import type { StudyBlock } from '../types/agenda';
 import { db } from './storage';
+import { googleAuthService } from './google-auth';
 
 import socraticTutorPrompt from '../prompts/socratic_tutor.md?raw';
 import agendaPlannerPrompt from '../prompts/agenda_planner.md?raw';
@@ -143,7 +144,13 @@ export class AIClientService {
     topic: string,
     history: ChatMessage[]
   ): Promise<ChatMessage> {
-    const systemInstruction = `${STATIC_PROMPTS.socratic}\n\nCONTEXTO ACTUAL:\nAsignatura: ${subject}\nTema: ${topic}`;
+    const authState = googleAuthService.getState();
+    const user = authState.user;
+    const gradeLevel = user?.gradeLevel || '1º de ESO';
+    const stageName = user?.stageName || 'Operaciones Concretas';
+    const gradeKey = user?.gradeKey || '1eso';
+
+    const systemInstruction = `${STATIC_PROMPTS.socratic}\n\nCONTEXTO INSTITUCIONAL DEL ALUMNO:\n- Alumno: ${user?.name || 'Estudiante'}\n- Grado Escolar: ${gradeLevel}\n- Estadio Cognitivo (Piaget): ${stageName}\n- Asignatura: ${subject}\n- Tema: ${topic}\n\nRECUERDA:\nSi el alumno es de 1º de ESO, el complemento verbal solo se identifica en bloque como Complemento Verbal (CV) sin exigir subtipos. Si es de 2º de Bachillerato, es obligatorio exigir la tipología formal (CPred, CCL, etc.) y pruebas sintácticas.`;
     const formattedHistory = history.slice(-6).map(m => ({
       role: m.role === 'tutor' ? ('assistant' as const) : ('user' as const),
       content: m.content
@@ -169,9 +176,9 @@ export class AIClientService {
       };
     }
 
-    // Motor integrado de reserva
-    await new Promise(resolve => setTimeout(resolve, 600));
-    return this.createSimulatedSocraticResponse(studentMessage, subject);
+    // Motor integrado de reserva pedagógica adaptado al grado del alumno
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return this.createSimulatedSocraticResponse(studentMessage, subject, topic, gradeKey);
   }
 
   /**
@@ -241,8 +248,14 @@ export class AIClientService {
   /**
    * Flujo 3: Generador de Tarjetas de Memoria Activa (Active Recall)
    */
+  /**
+   * Flujo 3: Generador de Tarjetas de Memoria Activa (Active Recall)
+   */
   public async generateActiveRecallCard(subject: string, topic: string): Promise<FlashCard> {
-    const prompt = `${STATIC_PROMPTS.recall}\n\nGenera una tarjeta conceptual de autoevaluación para la materia ${subject} y tema ${topic}. Formato JSON estricto.`;
+    const authState = googleAuthService.getState();
+    const gradeKey = authState.user?.gradeKey || '1eso';
+
+    const prompt = `${STATIC_PROMPTS.recall}\n\nGenera una tarjeta conceptual de autoevaluación para la materia ${subject} y tema ${topic} adaptada al nivel ${gradeKey === '1eso' ? '1º de ESO' : '2º de Bachillerato'}. Formato JSON estricto.`;
 
     const llmOutput = await this.callLLM(prompt, [
       { role: 'user', content: `Crear desafío de active recall sobre ${topic}` }
@@ -266,6 +279,27 @@ export class AIClientService {
       }
     }
 
+    // Fallbacks didácticos específicos para Lengua Castellana según el nivel de grado
+    if (subject.toLowerCase().includes('lengua')) {
+      if (gradeKey === '1eso') {
+        return {
+          id: `card_${Date.now()}`,
+          concept: 'En 1º de ESO, ¿cómo reconocemos el Complemento Verbal en "El tren llegó puntual a la estación"?',
+          hint: 'Localiza qué palabras acompañan al verbo "llegó" para completar la acción, sin clasificarlas en subtipos.',
+          explanation: 'En 1º de ESO, "puntual a la estación" se identifica en bloque como Complemento Verbal (CV) que acompaña al verbo dentro del predicado.',
+          masteryScore: 0
+        };
+      } else {
+        return {
+          id: `card_${Date.now()}`,
+          concept: 'En 2º de Bachillerato, ¿qué prueba sintáctica demuestra que "puntual" es Complemento Predicativo (CPred) y no CCM?',
+          hint: 'Comprueba qué ocurre al cambiar el sujeto a plural ("Las locomotoras...").',
+          explanation: 'La prueba de concordancia: "puntual" es un adjetivo que concuerda en género y número con el sujeto ("Las locomotoras llegaron puntuales"), rasgo exclusivo del CPred frente a la inmutabilidad del CCM.',
+          masteryScore: 0
+        };
+      }
+    }
+
     return {
       id: `card_${Date.now()}`,
       concept: `¿Cómo influyen los factores limitantes en ${topic} (${subject})?`,
@@ -275,10 +309,50 @@ export class AIClientService {
     };
   }
 
-  private createSimulatedSocraticResponse(studentMessage: string, subject: string): ChatMessage {
+  private createSimulatedSocraticResponse(
+    studentMessage: string,
+    subject: string,
+    topic = '',
+    gradeKey: '1eso' | '2batx' = '1eso'
+  ): ChatMessage {
     const text = studentMessage.toLowerCase();
     let reply = '';
     let suggestions: string[] = [];
+
+    // Caso de estudio específico del TR: Lengua Castellana / Análisis Sintáctico
+    if (subject.toLowerCase().includes('lengua') || topic.toLowerCase().includes('oraci') || topic.toLowerCase().includes('sintaxis')) {
+      if (gradeKey === '1eso') {
+        reply = `¡Hola Marc! En 1º de ESO lo importante es entender la estructura básica sin liarnos con nombres difíciles. 🚂✨\n\nEn la oración *"El tren llegó puntual a la estación"*, primero encontramos el verbo (*llegó*) y quién realiza la acción (*El tren*, que es el Sujeto). Todas las palabras que acompañan al verbo (*"puntual a la estación"*) las identificamos como **Complemento Verbal (CV)** en bloque.\n\n¿Qué información nos aporta este complemento verbal sobre cómo y hacia dónde se mueve el tren?`;
+        suggestions = [
+          'Aporta información del modo y el lugar del viaje',
+          '¿Por qué en 1º de ESO no distinguimos subtipos?',
+          '¿Cómo encuentro el sujeto si va al final?'
+        ];
+        return {
+          id: `msg_${Date.now()}`,
+          role: 'tutor',
+          content: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isSocraticQuestion: true,
+          suggestedPrompts: suggestions
+        };
+      } else {
+        reply = `¡Hola Álvaro! En 2º de Bachillerato abordamos el análisis sintáctico con rigor preuniversitario (PAU). 🎓📚\n\nEn la oración *"El tren llegó puntual a la estación"*, no basta con señalar un complemento verbal global: debemos clasificar cada elemento con exactitud gramatical.\n\nFíjate en *"puntual"*: ¿es un adjetivo o un adverbio? Si cambiamos el sujeto por *"Las locomotoras"*, ¿qué le ocurre a *"puntual"*? ¿Qué prueba sintáctica formal demuestra que es un **Complemento Predicativo (CPred)** y no un CC de Modo?`;
+        suggestions = [
+          'Concuerda con el sujeto ("llegaron puntuales"), es CPred',
+          '¿Y qué función sintáctica tiene "a la estación"?',
+          '¿Qué diferencia hay entre CPred y Atributo?'
+        ];
+        return {
+          id: `msg_${Date.now()}`,
+          role: 'tutor',
+          content: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isSocraticQuestion: true,
+          suggestedPrompts: suggestions
+        };
+      }
+    }
 
     const isDirectSolutionRequest = 
       text.includes('dame la respuesta') || 

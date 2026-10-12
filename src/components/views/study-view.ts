@@ -1,9 +1,24 @@
 import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
+import { googleAuthService } from '../../services/google-auth';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ChatMessage, StudyTopic } from '../../types/study';
 
 const AVAILABLE_TOPICS: StudyTopic[] = [
+  {
+    id: 't_lengua_1eso',
+    subject: 'Lengua Castellana',
+    name: 'Análisis de Oraciones: Sujeto y Complemento Verbal',
+    level: '1º de ESO (12 años)',
+    keyConcepts: ['Sujeto y Predicado', 'Verbo', 'Complemento Verbal (en bloque)']
+  },
+  {
+    id: 't_lengua_2batx',
+    subject: 'Lengua Castellana',
+    name: 'Sintaxis Superior: Tipología y Pruebas de Complementos (PAU)',
+    level: '2º de Bachillerato (17-18 años)',
+    keyConcepts: ['CPredicativo (concordancia)', 'CRV vs CC', 'Pruebas sintácticas PAU']
+  },
   {
     id: 't_math',
     subject: 'Matemáticas',
@@ -28,25 +43,48 @@ const AVAILABLE_TOPICS: StudyTopic[] = [
 ];
 
 export function renderStudyView(container: HTMLElement): void {
-  let selectedTopic = AVAILABLE_TOPICS[0];
-  let messages: ChatMessage[] = [
-    {
-      id: 'msg_welcome',
-      role: 'tutor',
-      content: `¡Hola! Soy tu tutor socrático en **${selectedTopic.subject}** (${selectedTopic.name}).
-      
-Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos juntos los conceptos paso a paso para que tu cerebro construya conexiones reales. 
+  const auth = googleAuthService.getState();
+  const currentGrade = auth.user?.gradeKey || '1eso';
+  let selectedTopic = currentGrade === '2batx' ? AVAILABLE_TOPICS[1] : AVAILABLE_TOPICS[0];
 
-¿Qué ejercicio o concepto estás abordando ahora mismo?`,
+  function getInitialMessage(topic: StudyTopic): ChatMessage {
+    const isLengua = topic.subject.includes('Lengua');
+    const isBatx = topic.id === 't_lengua_2batx';
+
+    let content = `¡Hola! Soy tu tutor socrático en **${topic.subject}** (${topic.name}).\n\nRecuerda: aquí no te daré las respuestas masticadas, sino que exploraremos juntos los conceptos paso a paso para que tu cerebro construya conexiones reales.\n\n¿Qué ejercicio o concepto estás abordando ahora mismo?`;
+    let suggestedPrompts = [
+      'No sé cómo empezar el ejercicio',
+      'Tengo dudas con el primer paso',
+      'Quiero repasar la teoría básica'
+    ];
+
+    if (isLengua && !isBatx) {
+      content = `¡Hola, Marc! Soy tu tutor socrático en **Lengua Castellana (1º de ESO)**. 🚂✨\n\nEn 1º de ESO aprenderemos a identificar el sujeto, el verbo y el **Complemento Verbal** en bloque, sin agobiarnos con nombres difíciles ni clasificaciones complejas.\n\nPor ejemplo, en la oración: *"El tren llegó puntual a la estación"*, ¿quién realiza la acción y qué palabras acompañan al verbo para completar la idea?`;
+      suggestedPrompts = [
+        'El sujeto es "El tren" y el verbo "llegó"',
+        '¿Qué palabras forman el complemento verbal?',
+        '¿Cómo distingo el sujeto del predicado?'
+      ];
+    } else if (isLengua && isBatx) {
+      content = `¡Hola, Álvaro! Soy tu tutor socrático en **Lengua Castellana (2º de Bachillerato - Preparación PAU)**. 🎓📚\n\nEn este nivel analizamos la sintaxis con rigor gramatical: es obligatorio clasificar la tipología exacta de cada complemento verbal (CD, CI, CRV, CC, CPred, CAg) y demostrarlo con pruebas sintácticas formales.\n\nConsidera la oración: *"El tren llegó puntual a la estación"*. ¿Por qué 'puntual' no puede ser un CC de Modo y qué prueba sintáctica formal demuestra que es un **Complemento Predicativo (CPred)**?`;
+      suggestedPrompts = [
+        '"Puntual" concuerda con el sujeto en género y número',
+        '¿Y qué función sintáctica tiene "a la estación"?',
+        '¿Cómo distingo un CPred de un Atributo?'
+      ];
+    }
+
+    return {
+      id: `msg_welcome_${Date.now()}`,
+      role: 'tutor',
+      content,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSocraticQuestion: true,
-      suggestedPrompts: [
-        'No sé cómo empezar el ejercicio',
-        'Tengo dudas con el primer paso',
-        'Quiero repasar la teoría básica'
-      ]
-    }
-  ];
+      suggestedPrompts
+    };
+  }
+
+  let messages: ChatMessage[] = [getInitialMessage(selectedTopic)];
 
   function render() {
     container.innerHTML = `
@@ -222,15 +260,7 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
       const found = AVAILABLE_TOPICS.find(t => t.id === topicId);
       if (found) {
         selectedTopic = found;
-        messages = [
-          {
-            id: `msg_${Date.now()}`,
-            role: 'tutor',
-            content: `¡Cambiamos a **${selectedTopic.subject}** (${selectedTopic.name})! ¿En qué concepto específico te gustaría que te guíe hoy?`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSocraticQuestion: true
-          }
-        ];
+        messages = [getInitialMessage(found)];
         render();
       }
     });

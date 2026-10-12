@@ -1,11 +1,14 @@
 export type AuthMode = 'demo' | 'real';
+export type StudentGrade = '1eso' | '2batx';
 
 export interface GoogleProfile {
   id: string;
   name: string;
   email: string;
   avatarUrl: string;
-  gradeLevel: string; // e.g. "4º ESO", "2º Bachillerato", "6º Primaria"
+  gradeLevel: string; // e.g. "1º de ESO (12 años)", "2º de Bachillerato (17-18 años)"
+  gradeKey: StudentGrade; // '1eso' | '2batx'
+  stageName: string; // "Operaciones Concretas / Transición" o "Operaciones Formales / Preuniversitario"
   connectedAt: string;
   mode: AuthMode;
 }

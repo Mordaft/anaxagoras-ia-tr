@@ -51,3 +51,16 @@ Requisitos funcionales centrados en la autonomía del estudiante, crecimiento co
 - **Criterios de Aceptación:**
   - Llamada HTTP `GET https://www.googleapis.com/drive/v3/files` para obtener archivos del usuario.
   - Los archivos adjuntos muestran título real, tipo de archivo y enlace directo para abrirlos.
+
+### HU-04: Diferenciación Curricular y Adaptación por Nivel Cognitivo (1º ESO vs 2º Bachillerato)
+- **Como** tribunal de evaluación del Treball de Recerca o educador,
+- **Quiero** poder contrastar en la aplicación cómo cambia el nivel de exigencia ante un mismo trabajo escolar de Lengua Castellana (Análisis Sintáctico de la oración *"El tren llegó puntual a la estación"*),
+- **Para** demostrar empíricamente la hipótesis del TR sobre el cruce de datos del alumno con los *System Prompts* de los departamentos didácticos.
+- **Criterios de Aceptación:**
+  - En **Modo Demo (1º de ESO - Marc Vidal, 12 años)**:
+    - El complemento verbal solo se identifica en bloque como **Complemento Verbal (CV)** para entender la predicación sin clasificar subtipos.
+    - El tutor socrático utiliza lenguaje cercano, oraciones breves y analogías cotidianas (operaciones concretas de Piaget).
+  - En **Modo Conectado / 2º de Bachillerato (Álvaro Martín, 17-18 años)**:
+    - Se exige la tipificación obligatoria de los complementos verbales (CPred vs CCL) y justificación mediante pruebas sintácticas formales (concordancia con el sujeto).
+    - El tutor socrático aplica rigor preuniversitario (PAU) y terminología formal de la RAE (operaciones formales de Piaget).
+  - Selector y comparador visual en Trabajos, Estudio y Modal de Cuenta para alternar perfiles en un solo clic durante la presentación.

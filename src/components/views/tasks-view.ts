@@ -1,17 +1,30 @@
-import { db } from '../../services/storage';
+import { db, ensureLenguaCastellanaTasks } from '../../services/storage';
 import { googleDriveService } from '../../services/google-drive';
+import { googleAuthService } from '../../services/google-auth';
 import { STATIC_PROMPTS } from '../../services/ai-client';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ProjectTask, TaskPhase } from '../../types/tasks';
 
 export function renderTasksView(container: HTMLElement): void {
+  let activeGradeFilter: 'all' | '1eso' | '2batx' = 'all';
+
   async function loadData() {
+    await ensureLenguaCastellanaTasks();
     const tasks = await db.projectTasks.toArray();
     renderContent(tasks);
   }
 
   function renderContent(tasks: ProjectTask[]) {
+    const auth = googleAuthService.getState();
+    const currentStudent = auth.user;
+    const currentGrade = currentStudent?.gradeKey || '1eso';
+
+    // Filter tasks if not in 'all' view
+    const displayedTasks = activeGradeFilter === 'all'
+      ? tasks
+      : tasks.filter(t => !t.gradeKey || t.gradeKey === activeGradeFilter || t.gradeKey === 'both');
+
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -37,10 +50,43 @@ export function renderTasksView(container: HTMLElement): void {
           </div>
         </div>
 
+        <!-- Comparative Presentation Banner (1º ESO vs 2º Bachillerato) -->
+        <div class="glass-panel p-5 rounded-3xl border border-brand-200/80 bg-gradient-to-r from-brand-50/70 via-white to-cyan-50/60 space-y-3.5 shadow-sm">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl p-2 rounded-2xl bg-brand-100/60 border border-brand-200/60">⚖️</span>
+              <div>
+                <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                  <span>Demostración de Niveles: Caso de Estudio Lengua Castellana</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}">
+                    Perfil Activo: ${currentStudent?.gradeLevel || '1º de ESO'}
+                  </span>
+                </h3>
+                <p class="text-xs text-slate-600 mt-0.5">
+                  Compara cómo cambia la exigencia ante la misma oración (<em>"El tren llegó puntual a la estación"</em>): en 1º de ESO el complemento verbal solo se identifica en bloque; en 2º de Bachillerato se exige clasificar la tipología (CPred vs CCL) con pruebas sintácticas formales.
+                </p>
+              </div>
+            </div>
+
+            <!-- Grade Filter Selector for Live TR Defense -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl self-start md:self-auto flex-wrap">
+              <button id="btn-filter-1eso" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === '1eso' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                🟢 1º ESO (Demo)
+              </button>
+              <button id="btn-filter-2batx" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === '2batx' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                🟣 2º Bachillerato
+              </button>
+              <button id="btn-filter-all" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === 'all' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+                🔍 Ambos Grados
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Task Deliverables List -->
         <div class="space-y-6">
           ${
-            tasks.length === 0
+            displayedTasks.length === 0
               ? `
               <div class="p-12 text-center glass-panel rounded-3xl">
                 <span class="text-4xl">📝</span>
@@ -48,10 +94,10 @@ export function renderTasksView(container: HTMLElement): void {
                 <p class="text-xs text-slate-400">${t('tasks.emptyDesc')}</p>
               </div>
             `
-              : tasks
+              : displayedTasks
                   .map(
                     task => `
-              <div class="glass-panel p-6 rounded-3xl border border-slate-200 glow-card space-y-6">
+              <div class="glass-panel p-6 rounded-3xl border ${task.gradeKey === '1eso' ? 'border-emerald-200/80 bg-emerald-50/15' : task.gradeKey === '2batx' ? 'border-purple-200/80 bg-purple-50/15' : 'border-slate-200'} glow-card space-y-5">
                 
                 <!-- Task Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -61,8 +107,19 @@ export function renderTasksView(container: HTMLElement): void {
                       <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200">
                         ${task.subject}
                       </span>
+                      ${
+                        task.gradeKey === '1eso'
+                          ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              🟢 1º de ESO • Operaciones Concretas
+                            </span>`
+                          : task.gradeKey === '2batx'
+                          ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                              🟣 2º de Bachillerato • Operaciones Formales (PAU)
+                            </span>`
+                          : ''
+                      }
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">${task.notes}</p>
+                    <p class="text-xs text-slate-600 mt-1">${task.notes}</p>
                   </div>
 
                   <div class="flex items-center gap-3">
@@ -72,6 +129,21 @@ export function renderTasksView(container: HTMLElement): void {
                     </div>
                   </div>
                 </div>
+
+                ${
+                  task.pedagogicalNote
+                    ? `
+                  <!-- Pedagogical Stage Callout (Piaget TR Anchor) -->
+                  <div class="p-3.5 rounded-2xl ${task.gradeKey === '1eso' ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-purple-50 border border-purple-200 text-purple-900'} text-xs flex items-start gap-2.5">
+                    <span class="text-base flex-shrink-0">🧠</span>
+                    <div>
+                      <span class="font-bold block">Fundamento Pedagógico (Piaget & Guardrails):</span>
+                      <span class="leading-relaxed">${task.pedagogicalNote}</span>
+                    </div>
+                  </div>
+                `
+                    : ''
+                }
 
                 <!-- 4-Phases Progression Stepper -->
                 <div>
@@ -275,6 +347,24 @@ export function renderTasksView(container: HTMLElement): void {
     });
     container.querySelector('#btn-cancel-nt')?.addEventListener('click', () => {
       modal?.classList.add('hidden');
+    });
+
+    // Grade Filter and Profile Switches for TR Live Defense
+    container.querySelector('#btn-filter-1eso')?.addEventListener('click', () => {
+      googleAuthService.setGradeProfile('1eso');
+      activeGradeFilter = '1eso';
+      renderContent(tasks);
+    });
+
+    container.querySelector('#btn-filter-2batx')?.addEventListener('click', () => {
+      googleAuthService.setGradeProfile('2batx');
+      activeGradeFilter = '2batx';
+      renderContent(tasks);
+    });
+
+    container.querySelector('#btn-filter-all')?.addEventListener('click', () => {
+      activeGradeFilter = 'all';
+      renderContent(tasks);
     });
 
     // View Project Guide Prompt modal
