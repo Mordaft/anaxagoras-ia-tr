@@ -18,11 +18,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
         
         <!-- Logo & Branding -->
         <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 via-brand-500 to-accent-cyan flex items-center justify-center text-white shadow-md shadow-brand-500/25">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
+          <img src="./icons/icon-192.png" alt="Anaxagoras AI Logo" class="w-10 h-10 rounded-2xl shadow-md shadow-brand-500/20 object-cover border border-slate-200/80 bg-slate-900" />
           <div>
             <div class="flex items-center gap-2">
               <span class="font-display font-bold text-xl tracking-tight text-slate-900">${t('app.title')}</span>
