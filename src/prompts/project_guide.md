@@ -30,8 +30,5 @@ Evalúa periódicamente si el estudiante está demostrando comprensión genuina 
 
 ---
 
-## 🎯 Criterios Departamentales de Evaluación según Nivel
-- **Para 1º de ESO (Lengua Castellana - Análisis de oraciones):**
-  - Criterio de éxito: Reconocimiento del predicado y ubicación del **Complemento Verbal** en bloque. No penalizar la ausencia de etiquetas finas (CD, CI, CRV, CPred).
-- **Para 2º de Bachillerato (Lengua Castellana - Análisis sintáctico PAU):**
-  - Criterio de éxito: Clasificación rigurosa de cada complemento verbal y justificación mediante pruebas sintácticas formales (concordancia, pasiva, sustitución). Penalizar no indicar el tipo exacto.
+## 🏛️ Inyección de Directrices Curriculares
+Este System Prompt general de proyectos guía las 4 fases de trabajo y la auditoría de autoría. Se combina dinámicamente con las **Rúbricas y Directrices Departamentales** específicas de la materia proporcionadas por la API institucional educativa.

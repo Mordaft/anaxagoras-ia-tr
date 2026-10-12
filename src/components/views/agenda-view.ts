@@ -1,20 +1,34 @@
-import { db } from '../../services/storage';
+import { db, ensureGradeSpecificAgendaBlocks } from '../../services/storage';
 import { googleCalendarService } from '../../services/google-calendar';
 import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
+import { googleAuthService } from '../../services/google-auth';
+import { educationalApiService } from '../../services/educational-api';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { StudyBlock, EventType } from '../../types/agenda';
 
 export function renderAgendaView(container: HTMLElement): void {
   async function loadData() {
-    const blocks = await db.studyBlocks.toArray();
+    await ensureGradeSpecificAgendaBlocks();
+    const allBlocks = await db.studyBlocks.toArray();
+    const auth = googleAuthService.getState();
+    const currentGrade = auth.user?.gradeKey || '1eso';
+    // Filter strictly by connected student grade (or 'both')
+    const blocks = allBlocks.filter(b => b.gradeKey === currentGrade || b.gradeKey === 'both' || !b.gradeKey);
     renderContent(blocks);
   }
 
   function renderContent(blocks: StudyBlock[]) {
+    const auth = googleAuthService.getState();
+    const currentUser = auth.user;
+    const currentGrade = currentUser?.gradeKey || '1eso';
     const totalBlocks = blocks.length;
     const completedBlocks = blocks.filter(b => b.completed).length;
     const syncedBlocks = blocks.filter(b => b.syncedWithGoogle).length;
+
+    // Detect next exam or milestone dynamically
+    const nextExam = blocks.find(b => b.type === 'exam') || blocks[0];
+    const examTitle = nextExam ? `${nextExam.subject}: ${nextExam.title}` : 'Sin exámenes programados';
 
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -30,7 +44,7 @@ export function renderAgendaView(container: HTMLElement): void {
             </div>
             <div class="mt-3">
               <span class="text-2xl font-display font-extrabold text-slate-900">${t('agenda.inDays')}</span>
-              <p class="text-xs text-slate-500 mt-1">Biología: La Célula y Fotosíntesis</p>
+              <p class="text-xs text-slate-600 mt-1 font-medium truncate" title="${examTitle}">${examTitle}</p>
             </div>
             <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-brand-600">
               <span>${t('agenda.recommendedToday')}</span>
@@ -80,17 +94,25 @@ export function renderAgendaView(container: HTMLElement): void {
         <!-- Section Header & Filter / Add Block -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div>
-            <h2 class="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>${t('agenda.title')}</span>
-              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-normal">${t('agenda.autonomousOrg')}</span>
-            </h2>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-xl font-display font-bold text-slate-900">
+                ${t('agenda.title')}
+              </h2>
+              <span class="text-xs px-2.5 py-0.5 rounded-full ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-300'} font-bold">
+                ${currentUser?.name || 'Estudiante'} • ${currentUser?.gradeLevel || '1º de ESO'}
+              </span>
+            </div>
             <p class="text-xs text-slate-500 mt-0.5">${t('agenda.subtitle')}</p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="btn-view-agenda-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver contenido del prompt estático de esta sección">
+            <button id="btn-view-agenda-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Prompt de Sección: Planificador de Agenda">
               <span>📄</span>
               <span>Prompt Agenda</span>
+            </button>
+            <button id="btn-view-agenda-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Directriz Curricular Departamental provista por la API educativa">
+              <span>🏛️</span>
+              <span>Directriz API Educativa</span>
             </button>
             <button id="btn-ai-plan" class="px-3.5 py-2 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold transition-all flex items-center gap-1.5">
               <span>🤖</span>
@@ -270,14 +292,35 @@ export function renderAgendaView(container: HTMLElement): void {
       }
     });
 
-    // Prompt Viewer modal trigger
+    // Prompt Viewer modal trigger (Section Prompt)
     container.querySelector('#btn-view-agenda-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
       renderPromptViewerModal(
         modalRoot, 
         'Prompt Estático: Planificador de Agenda (agenda_planner.md)', 
         STATIC_PROMPTS.agenda, 
-        { onClose: () => { modalRoot.innerHTML = ''; } }
+        { 
+          subtitle: 'Prompt Transversal de Sección (Metodología Spaced Repetition)',
+          onClose: () => { modalRoot.innerHTML = ''; } 
+        }
+      );
+    });
+
+    // Curricular Prompt modal trigger (Institutional Educational API)
+    container.querySelector('#btn-view-agenda-curricular')?.addEventListener('click', async () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      const curricularData = await educationalApiService.getDepartmentalPrompt('Lengua Castellana y Literatura', currentGrade);
+      renderPromptViewerModal(
+        modalRoot,
+        curricularData.subject,
+        curricularData.promptMarkdown,
+        {
+          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
+          institution: curricularData.institution,
+          sourceApi: curricularData.sourceApi,
+          gradeLevel: curricularData.gradeLevel,
+          onClose: () => { modalRoot.innerHTML = ''; }
+        }
       );
     });
 
@@ -286,9 +329,13 @@ export function renderAgendaView(container: HTMLElement): void {
     aiPlanBtn?.addEventListener('click', async () => {
       if (aiPlanBtn) aiPlanBtn.innerHTML = `<span>⏳ Planificando...</span>`;
       try {
-        const blocks = await aiClientService.generateStudyPlan('Biología y Matemáticas', 'Preparación de Hitos Semanales');
+        const examSubject = currentGrade === '1eso' ? 'Ciencias Naturales' : 'Filosofía y Matemáticas II';
+        const blocks = await aiClientService.generateStudyPlan(examSubject, 'Preparación de Hitos Semanales');
         for (const b of blocks) {
-          await db.studyBlocks.add(b);
+          await db.studyBlocks.add({
+            ...b,
+            gradeKey: currentGrade
+          });
         }
         await loadData();
       } catch (err: any) {
@@ -325,6 +372,7 @@ export function renderAgendaView(container: HTMLElement): void {
         startTime,
         durationMinutes: 45,
         completed: false,
+        gradeKey: currentGrade,
         notes,
         syncedWithGoogle: true,
         googleEventId: `gcal_${Date.now()}`

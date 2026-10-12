@@ -3,6 +3,7 @@ import type { ChatMessage, FlashCard } from '../types/study';
 import type { StudyBlock } from '../types/agenda';
 import { db } from './storage';
 import { googleAuthService } from './google-auth';
+import { educationalApiService } from './educational-api';
 
 import socraticTutorPrompt from '../prompts/socratic_tutor.md?raw';
 import agendaPlannerPrompt from '../prompts/agenda_planner.md?raw';
@@ -150,7 +151,30 @@ export class AIClientService {
     const stageName = user?.stageName || 'Operaciones Concretas';
     const gradeKey = user?.gradeKey || '1eso';
 
-    const systemInstruction = `${STATIC_PROMPTS.socratic}\n\nCONTEXTO INSTITUCIONAL DEL ALUMNO:\n- Alumno: ${user?.name || 'Estudiante'}\n- Grado Escolar: ${gradeLevel}\n- Estadio Cognitivo (Piaget): ${stageName}\n- Asignatura: ${subject}\n- Tema: ${topic}\n\nRECUERDA:\nSi el alumno es de 1º de ESO, el complemento verbal solo se identifica en bloque como Complemento Verbal (CV) sin exigir subtipos. Si es de 2º de Bachillerato, es obligatorio exigir la tipología formal (CPred, CCL, etc.) y pruebas sintácticas.`;
+    // 1. Obtención de la Directriz Curricular Departamental provista por la API educativa institucional
+    const curricularDirective = await educationalApiService.getDepartmentalPrompt(subject, gradeKey);
+
+    // 2. Composición del System Instruction separando estrictamente:
+    //    a) Prompt de Sección (metodología pedagógica y guardrails no negociables)
+    //    b) Directriz Curricular Departamental (proporcionada por la API de la entidad educativa según curso del alumno)
+    //    c) Contexto dinámico de sesión
+    const systemInstruction = `
+${STATIC_PROMPTS.socratic}
+
+---
+=== DIRECTRIZ CURRICULAR DEPARTAMENTAL ===
+Fuente: ${curricularDirective.institution}
+Endpoint API: ${curricularDirective.sourceApi}
+Nivel Asignado: ${curricularDirective.gradeLevel} (${curricularDirective.stageName})
+
+${curricularDirective.promptMarkdown}
+==========================================
+
+CONTEXTO DE LA SESIÓN:
+- Alumno Conectado: ${user?.name || 'Estudiante'} (${gradeLevel} • ${stageName})
+- Asignatura: ${subject}
+- Tema Actual: ${topic}
+`.trim();
     const formattedHistory = history.slice(-6).map(m => ({
       role: m.role === 'tutor' ? ('assistant' as const) : ('user' as const),
       content: m.content

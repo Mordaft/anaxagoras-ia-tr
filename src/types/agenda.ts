@@ -10,6 +10,7 @@ export interface StudyBlock {
   type: EventType;
   completed: boolean;
   notes?: string;
+  gradeKey?: '1eso' | '2batx' | 'both';
   syncedWithGoogle: boolean;
   googleEventId?: string;
 }

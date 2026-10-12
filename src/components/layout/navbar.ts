@@ -76,15 +76,34 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
     googleAuthService.subscribe((state) => {
       if (state.isAuthenticated && state.user) {
         authContainer.innerHTML = `
-          <button id="btn-user-profile" class="flex items-center gap-2 pl-2 pr-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all">
-            <img src="${state.user.avatarUrl}" alt="${state.user.name}" class="w-6 h-6 rounded-full object-cover border border-brand-200" />
-            <div class="text-left hidden sm:block">
-              <span class="block text-xs font-semibold text-slate-800 leading-none">${state.user.name}</span>
-              <span class="text-[10px] text-slate-500 leading-none">${state.user.gradeLevel}</span>
-            </div>
-            <span class="w-2 h-2 rounded-full ${state.mode === 'real' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'} ml-1" title="${state.mode === 'real' ? 'Cuenta Google Real' : 'Modo Demo Activo'}"></span>
-          </button>
+          <div class="flex items-center gap-1.5">
+            ${
+              state.mode === 'demo'
+                ? `
+              <button id="btn-quick-switch-grade" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold ${
+                state.user.gradeKey === '1eso'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
+                  : 'bg-purple-50 text-purple-800 border border-purple-300 hover:bg-purple-100'
+              } transition-all" title="Cambiar rápidamente entre los dos perfiles de prueba de la presentación">
+                <span>🔄</span>
+                <span>${state.user.gradeKey === '1eso' ? '1º ESO' : '2º Batx'}</span>
+              </button>
+            `
+                : ''
+            }
+            <button id="btn-user-profile" class="flex items-center gap-2 pl-2 pr-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition-all">
+              <img src="${state.user.avatarUrl}" alt="${state.user.name}" class="w-6 h-6 rounded-full object-cover border border-brand-200" />
+              <div class="text-left hidden sm:block">
+                <span class="block text-xs font-semibold text-slate-800 leading-none">${state.user.name}</span>
+                <span class="text-[10px] text-slate-500 leading-none">${state.user.gradeLevel}</span>
+              </div>
+              <span class="w-2 h-2 rounded-full ${state.mode === 'real' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'} ml-1" title="${state.mode === 'real' ? 'Cuenta Google Real' : 'Modo Demo Activo'}"></span>
+            </button>
+          </div>
         `;
+        authContainer.querySelector('#btn-quick-switch-grade')?.addEventListener('click', () => {
+          googleAuthService.toggleGradeProfile();
+        });
         authContainer.querySelector('#btn-user-profile')?.addEventListener('click', callbacks.onOpenAuth);
       } else {
         authContainer.innerHTML = `

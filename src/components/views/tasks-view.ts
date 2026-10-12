@@ -1,14 +1,13 @@
 import { db, ensureLenguaCastellanaTasks } from '../../services/storage';
 import { googleDriveService } from '../../services/google-drive';
 import { googleAuthService } from '../../services/google-auth';
+import { educationalApiService } from '../../services/educational-api';
 import { STATIC_PROMPTS } from '../../services/ai-client';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ProjectTask, TaskPhase } from '../../types/tasks';
 
 export function renderTasksView(container: HTMLElement): void {
-  let activeGradeFilter: 'all' | '1eso' | '2batx' = 'all';
-
   async function loadData() {
     await ensureLenguaCastellanaTasks();
     const tasks = await db.projectTasks.toArray();
@@ -20,10 +19,8 @@ export function renderTasksView(container: HTMLElement): void {
     const currentStudent = auth.user;
     const currentGrade = currentStudent?.gradeKey || '1eso';
 
-    // Filter tasks if not in 'all' view
-    const displayedTasks = activeGradeFilter === 'all'
-      ? tasks
-      : tasks.filter(t => !t.gradeKey || t.gradeKey === activeGradeFilter || t.gradeKey === 'both');
+    // Display tasks strictly for the connected student's grade
+    const displayedTasks = tasks.filter(t => !t.gradeKey || t.gradeKey === currentGrade || t.gradeKey === 'both');
 
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -31,55 +28,31 @@ export function renderTasksView(container: HTMLElement): void {
         <!-- Section Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>${t('tasks.title')}</span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-xl font-display font-bold text-slate-900">
+                ${t('tasks.title')}
+              </h2>
+              <span class="text-xs px-2.5 py-0.5 rounded-full ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-300'} font-bold">
+                ${currentStudent?.name || 'Estudiante'} • ${currentStudent?.gradeLevel || '1º de ESO'}
+              </span>
               <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">${t('tasks.driveIntegration')}</span>
-            </h2>
+            </div>
             <p class="text-xs text-slate-500 mt-0.5">${t('tasks.subtitle')}</p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            <button id="btn-view-project-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Prompt Estático de Trabajos">
+            <button id="btn-view-project-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Prompt de Sección: Mentor de Trabajos">
               <span>📄</span>
               <span>Prompt Trabajos</span>
+            </button>
+            <button id="btn-view-project-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Directriz Curricular Departamental provista por la API educativa">
+              <span>🏛️</span>
+              <span>Directriz API Educativa</span>
             </button>
             <button id="btn-new-task" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
               <span>＋</span>
               <span>${t('tasks.newTask')}</span>
             </button>
-          </div>
-        </div>
-
-        <!-- Comparative Presentation Banner (1º ESO vs 2º Bachillerato) -->
-        <div class="glass-panel p-5 rounded-3xl border border-brand-200/80 bg-gradient-to-r from-brand-50/70 via-white to-cyan-50/60 space-y-3.5 shadow-sm">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl p-2 rounded-2xl bg-brand-100/60 border border-brand-200/60">⚖️</span>
-              <div>
-                <h3 class="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <span>Demostración de Niveles: Caso de Estudio Lengua Castellana</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800' : 'bg-purple-100 text-purple-800'}">
-                    Perfil Activo: ${currentStudent?.gradeLevel || '1º de ESO'}
-                  </span>
-                </h3>
-                <p class="text-xs text-slate-600 mt-0.5">
-                  Compara cómo cambia la exigencia ante la misma oración (<em>"El tren llegó puntual a la estación"</em>): en 1º de ESO el complemento verbal solo se identifica en bloque; en 2º de Bachillerato se exige clasificar la tipología (CPred vs CCL) con pruebas sintácticas formales.
-                </p>
-              </div>
-            </div>
-
-            <!-- Grade Filter Selector for Live TR Defense -->
-            <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl self-start md:self-auto flex-wrap">
-              <button id="btn-filter-1eso" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === '1eso' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
-                🟢 1º ESO (Demo)
-              </button>
-              <button id="btn-filter-2batx" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === '2batx' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
-                🟣 2º Bachillerato
-              </button>
-              <button id="btn-filter-all" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${activeGradeFilter === 'all' ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
-                🔍 Ambos Grados
-              </button>
-            </div>
           </div>
         </div>
 
@@ -349,32 +322,35 @@ export function renderTasksView(container: HTMLElement): void {
       modal?.classList.add('hidden');
     });
 
-    // Grade Filter and Profile Switches for TR Live Defense
-    container.querySelector('#btn-filter-1eso')?.addEventListener('click', () => {
-      googleAuthService.setGradeProfile('1eso');
-      activeGradeFilter = '1eso';
-      renderContent(tasks);
-    });
-
-    container.querySelector('#btn-filter-2batx')?.addEventListener('click', () => {
-      googleAuthService.setGradeProfile('2batx');
-      activeGradeFilter = '2batx';
-      renderContent(tasks);
-    });
-
-    container.querySelector('#btn-filter-all')?.addEventListener('click', () => {
-      activeGradeFilter = 'all';
-      renderContent(tasks);
-    });
-
-    // View Project Guide Prompt modal
+    // View Project Guide Prompt modal (Section Prompt)
     container.querySelector('#btn-view-project-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
       renderPromptViewerModal(
         modalRoot,
         'Prompt Estático: Mentor de Trabajos y Proyectos (project_guide.md)',
         STATIC_PROMPTS.project,
-        { onClose: () => { modalRoot.innerHTML = ''; } }
+        { 
+          subtitle: 'Prompt Transversal de Sección (Metodología de 4 Fases y Auditoría de Autoría)',
+          onClose: () => { modalRoot.innerHTML = ''; } 
+        }
+      );
+    });
+
+    // View Curricular Prompt modal (Institutional Educational API)
+    container.querySelector('#btn-view-project-curricular')?.addEventListener('click', async () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      const curricularData = await educationalApiService.getDepartmentalPrompt('Lengua Castellana y Literatura', currentGrade);
+      renderPromptViewerModal(
+        modalRoot,
+        curricularData.subject,
+        curricularData.promptMarkdown,
+        {
+          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
+          institution: curricularData.institution,
+          sourceApi: curricularData.sourceApi,
+          gradeLevel: curricularData.gradeLevel,
+          onClose: () => { modalRoot.innerHTML = ''; }
+        }
       );
     });
 
@@ -390,6 +366,7 @@ export function renderTasksView(container: HTMLElement): void {
       await db.projectTasks.add({
         title,
         subject,
+        gradeKey: currentGrade,
         dueDate,
         currentPhase: 'planning',
         autonomyScore: 25,

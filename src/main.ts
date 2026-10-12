@@ -2,6 +2,7 @@ import './styles/index.css';
 import { i18n } from './services/i18n';
 import { pwaService } from './services/pwa-service';
 import { initializeStarterData } from './services/storage';
+import { googleAuthService } from './services/google-auth';
 import { renderNavbar } from './components/layout/navbar';
 import { renderTabs, type ActiveTab } from './components/layout/tabs';
 import { renderAISettingsModal } from './components/modals/ai-settings-modal';
@@ -16,6 +17,7 @@ class AnaxagorasApp {
   private tabsRoot: HTMLElement;
   private viewContainer: HTMLElement;
   private modalRoot: HTMLElement;
+  private isReady = false;
 
   constructor() {
     this.navbarRoot = document.getElementById('navbar-root')!;
@@ -36,15 +38,26 @@ class AnaxagorasApp {
 
     // 4. Listen for language changes and re-render entire interface reactively
     i18n.subscribe(() => {
-      this.renderHeaderAndTabs();
-      this.switchView(this.activeTab);
+      if (this.isReady) {
+        this.renderHeaderAndTabs();
+        this.switchView(this.activeTab);
+      }
     });
 
-    // 5. Render layout
+    // 5. Listen for student profile changes (1º ESO vs 2º Bachillerato) reactively
+    googleAuthService.subscribe(() => {
+      if (this.isReady) {
+        this.renderHeaderAndTabs();
+        this.switchView(this.activeTab);
+      }
+    });
+
+    // 6. Render layout
     this.renderHeaderAndTabs();
 
-    // 6. Render initial view
+    // 7. Render initial view
     this.switchView(this.activeTab);
+    this.isReady = true;
   }
 
   private renderHeaderAndTabs(): void {

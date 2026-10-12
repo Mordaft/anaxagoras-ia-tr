@@ -1,10 +1,11 @@
 import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
+import { educationalApiService } from '../../services/educational-api';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ChatMessage, StudyTopic } from '../../types/study';
 
-const AVAILABLE_TOPICS: StudyTopic[] = [
+const ALL_STUDY_TOPICS: StudyTopic[] = [
   {
     id: 't_lengua_1eso',
     subject: 'Lengua Castellana',
@@ -45,7 +46,17 @@ const AVAILABLE_TOPICS: StudyTopic[] = [
 export function renderStudyView(container: HTMLElement): void {
   const auth = googleAuthService.getState();
   const currentGrade = auth.user?.gradeKey || '1eso';
-  let selectedTopic = currentGrade === '2batx' ? AVAILABLE_TOPICS[1] : AVAILABLE_TOPICS[0];
+  
+  // Filter topics adapted to the connected student's grade level
+  const availableTopics = ALL_STUDY_TOPICS.filter(t => {
+    if (t.id === 't_lengua_1eso') return currentGrade === '1eso';
+    if (t.id === 't_lengua_2batx') return currentGrade === '2batx';
+    return true;
+  });
+
+  let selectedTopic = currentGrade === '2batx' 
+    ? (availableTopics.find(t => t.id === 't_lengua_2batx') || availableTopics[0])
+    : (availableTopics.find(t => t.id === 't_lengua_1eso') || availableTopics[0]);
 
   function getInitialMessage(topic: StudyTopic): ChatMessage {
     const isLengua = topic.subject.includes('Lengua');
@@ -125,12 +136,16 @@ export function renderStudyView(container: HTMLElement): void {
 
               <!-- Topic Selector & Prompt Inspector -->
               <div class="flex items-center gap-2 flex-wrap">
-                <button id="btn-view-socratic-prompt" class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Prompt Socrático Oficial">
+                <button id="btn-view-socratic-prompt" class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Prompt de Sección: Tutor Socrático">
                   <span>📄</span>
                   <span>Prompt Socrático</span>
                 </button>
+                <button id="btn-view-socratic-curricular" class="px-2.5 py-1.5 rounded-xl bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Directriz Curricular Departamental provista por la API educativa">
+                  <span>🏛️</span>
+                  <span>Directriz API Educativa</span>
+                </button>
                 <select id="select-topic" class="text-xs font-medium px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                  ${AVAILABLE_TOPICS.map(t => `<option value="${t.id}" ${t.id === selectedTopic.id ? 'selected' : ''}>${t.subject}: ${t.name}</option>`).join('')}
+                  ${availableTopics.map(t => `<option value="${t.id}" ${t.id === selectedTopic.id ? 'selected' : ''}>${t.subject}: ${t.name}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -257,7 +272,7 @@ export function renderStudyView(container: HTMLElement): void {
     // Topic selector
     container.querySelector('#select-topic')?.addEventListener('change', (e) => {
       const topicId = (e.target as HTMLSelectElement).value;
-      const found = AVAILABLE_TOPICS.find(t => t.id === topicId);
+      const found = availableTopics.find(t => t.id === topicId);
       if (found) {
         selectedTopic = found;
         messages = [getInitialMessage(found)];
@@ -271,14 +286,35 @@ export function renderStudyView(container: HTMLElement): void {
       ans?.classList.toggle('hidden');
     });
 
-    // View Socratic Prompt modal
+    // View Socratic Prompt modal (Section Prompt)
     container.querySelector('#btn-view-socratic-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
       renderPromptViewerModal(
         modalRoot,
         'Prompt Estático: Tutor Socrático (socratic_tutor.md)',
         STATIC_PROMPTS.socratic,
-        { onClose: () => { modalRoot.innerHTML = ''; } }
+        { 
+          subtitle: 'Prompt Transversal de Sección (Metodología Socrática y Guardrails Transversales)',
+          onClose: () => { modalRoot.innerHTML = ''; } 
+        }
+      );
+    });
+
+    // View Curricular Prompt modal (Institutional Educational API)
+    container.querySelector('#btn-view-socratic-curricular')?.addEventListener('click', async () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      const curricularData = await educationalApiService.getDepartmentalPrompt(selectedTopic.subject, currentGrade);
+      renderPromptViewerModal(
+        modalRoot,
+        curricularData.subject,
+        curricularData.promptMarkdown,
+        {
+          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
+          institution: curricularData.institution,
+          sourceApi: curricularData.sourceApi,
+          gradeLevel: curricularData.gradeLevel,
+          onClose: () => { modalRoot.innerHTML = ''; }
+        }
       );
     });
 
@@ -289,7 +325,10 @@ export function renderStudyView(container: HTMLElement): void {
         modalRoot,
         'Prompt Estático: Generador de Active Recall (active_recall_generator.md)',
         STATIC_PROMPTS.recall,
-        { onClose: () => { modalRoot.innerHTML = ''; } }
+        { 
+          subtitle: 'Prompt Transversal de Sección (Generación de Flashcards Conceptuales)',
+          onClose: () => { modalRoot.innerHTML = ''; } 
+        }
       );
     });
 
