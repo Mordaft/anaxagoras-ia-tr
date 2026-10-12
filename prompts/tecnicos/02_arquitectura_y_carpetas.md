@@ -19,6 +19,12 @@ anaxagoras-ia-tr/
 ├── tsconfig.json                # Configuración TypeScript estricta
 ├── src/
 │   ├── main.ts                  # Bootstrap, registro PWA, inicialización i18n
+│   ├── vite-env.d.ts            # Tipado Vite y soporte de importación estática markdown (?raw)
+│   ├── prompts/                 # 📄 Prompts estáticos del sistema en ficheros Markdown
+│   │   ├── agenda_planner.md         # Prompt: Planificador de agenda y estudio espaciado
+│   │   ├── socratic_tutor.md         # Prompt: Tutor socrático sin respuestas directas
+│   │   ├── project_guide.md          # Prompt: Guía de proyectos y entregas en 4 fases
+│   │   └── active_recall_generator.md # Prompt: Generador de tarjetas de Active Recall
 │   ├── styles/
 │   │   └── index.css            # Tailwind directives, fonts, utilidades glassmorphism
 │   ├── locales/                 # Diccionarios de traducción estándar i18n
@@ -34,10 +40,10 @@ anaxagoras-ia-tr/
 │   │   ├── google-auth.ts       # Google OAuth 2.0
 │   │   ├── google-calendar.ts   # Sincronización Google Calendar
 │   │   ├── google-drive.ts      # Vinculación archivos Google Drive
-│   │   └── ai-client.ts         # Inferencia OpenAI estándar (Local/Cloud) + Motor socrático
+│   │   └── ai-client.ts         # Integración LLM (Local Ollama / Cloud OpenAI) + prompts estáticos
 │   ├── types/                   # Interfaces de TypeScript
 │   └── components/              # Vistas y componentes UI adaptados a i18n
 │       ├── layout/              # Navbar y Tabs dinámicos
-│       ├── modals/              # Configuración IA, Auth Google y Notificación PWA
-│       └── views/               # Agenda, Estudio/Repaso y Trabajos
+│       ├── modals/              # Configuración IA, Auth Google, Notificación PWA y Visor de Prompts
+│       └── views/               # Agenda, Estudio/Repaso y Trabajos con flujos de IA
 ```

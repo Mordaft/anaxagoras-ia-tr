@@ -1,4 +1,5 @@
-import { aiClientService } from '../../services/ai-client';
+import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
+import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ChatMessage, StudyTopic } from '../../types/study';
 
@@ -84,10 +85,16 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
                 </div>
               </div>
 
-              <!-- Topic Selector -->
-              <select id="select-topic" class="text-xs font-medium px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                ${AVAILABLE_TOPICS.map(t => `<option value="${t.id}" ${t.id === selectedTopic.id ? 'selected' : ''}>${t.subject}: ${t.name}</option>`).join('')}
-              </select>
+              <!-- Topic Selector & Prompt Inspector -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <button id="btn-view-socratic-prompt" class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Prompt Socrático Oficial">
+                  <span>📄</span>
+                  <span>Prompt Socrático</span>
+                </button>
+                <select id="select-topic" class="text-xs font-medium px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  ${AVAILABLE_TOPICS.map(t => `<option value="${t.id}" ${t.id === selectedTopic.id ? 'selected' : ''}>${t.subject}: ${t.name}</option>`).join('')}
+                </select>
+              </div>
             </div>
 
             <!-- Messages Stream -->
@@ -142,7 +149,10 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
             <div class="glass-panel p-5 rounded-3xl border border-slate-200 space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('study.activeRecall')}</span>
-                <span class="text-base">⚡</span>
+                <button id="btn-view-recall-prompt" class="text-[11px] font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1">
+                  <span>📄</span>
+                  <span>Prompt Recall</span>
+                </button>
               </div>
 
               <div>
@@ -151,10 +161,10 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
               </div>
 
               <div id="flashcard-box" class="p-4 rounded-2xl bg-brand-50/40 border border-brand-100 space-y-3">
-                <span class="text-xs font-bold text-brand-700 block">¿Cuál es el significado del discriminante (b² - 4ac) en una ecuación de segundo grado?</span>
+                <span id="flashcard-concept" class="text-xs font-bold text-brand-700 block">¿Cuál es el significado del discriminante (b² - 4ac) en una ecuación de segundo grado?</span>
                 
                 <div id="flashcard-answer" class="hidden text-xs text-slate-700 pt-2 border-t border-brand-200/50 space-y-1">
-                  <p><strong>Explicación:</strong> Indica cuántas soluciones reales existen:</p>
+                  <p id="flashcard-explanation"><strong>Explicación:</strong> Indica cuántas soluciones reales existen:</p>
                   <p>• Si > 0: 2 soluciones reales distintas.</p>
                   <p>• Si = 0: 1 solución real (doble).</p>
                   <p>• Si < 0: No existen soluciones reales.</p>
@@ -164,6 +174,11 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
                   ${t('study.toggleHint')}
                 </button>
               </div>
+
+              <!-- AI Challenge Generator Button -->
+              <button id="btn-generate-card-ai" class="w-full py-2 px-3 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-colors flex items-center justify-center gap-1.5">
+                <span>⚡ Generar Nuevo Desafío con IA</span>
+              </button>
 
               <div class="flex items-center justify-between gap-2 pt-1">
                 <button class="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">
@@ -224,6 +239,47 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
     container.querySelector('#btn-toggle-answer')?.addEventListener('click', () => {
       const ans = container.querySelector('#flashcard-answer');
       ans?.classList.toggle('hidden');
+    });
+
+    // View Socratic Prompt modal
+    container.querySelector('#btn-view-socratic-prompt')?.addEventListener('click', () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      renderPromptViewerModal(
+        modalRoot,
+        'Prompt Estático: Tutor Socrático (socratic_tutor.md)',
+        STATIC_PROMPTS.socratic,
+        { onClose: () => { modalRoot.innerHTML = ''; } }
+      );
+    });
+
+    // View Recall Prompt modal
+    container.querySelector('#btn-view-recall-prompt')?.addEventListener('click', () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      renderPromptViewerModal(
+        modalRoot,
+        'Prompt Estático: Generador de Active Recall (active_recall_generator.md)',
+        STATIC_PROMPTS.recall,
+        { onClose: () => { modalRoot.innerHTML = ''; } }
+      );
+    });
+
+    // AI Active Recall Card generation
+    const genCardBtn = container.querySelector('#btn-generate-card-ai');
+    genCardBtn?.addEventListener('click', async () => {
+      if (genCardBtn) genCardBtn.innerHTML = `<span>⏳ Generando desafío...</span>`;
+      try {
+        const card = await aiClientService.generateActiveRecallCard(selectedTopic.subject, selectedTopic.name);
+        const conceptEl = container.querySelector('#flashcard-concept');
+        const explEl = container.querySelector('#flashcard-explanation');
+        const ans = container.querySelector('#flashcard-answer');
+        if (conceptEl) conceptEl.textContent = card.concept;
+        if (explEl) explEl.textContent = card.explanation;
+        ans?.classList.add('hidden');
+      } catch (err: any) {
+        alert(err.message || 'Error al generar tarjeta con IA');
+      } finally {
+        if (genCardBtn) genCardBtn.innerHTML = `<span>⚡ Generar Nuevo Desafío con IA</span>`;
+      }
     });
 
     // Chips click

@@ -4,10 +4,15 @@ Requisitos funcionales centrados en la autonomía del estudiante, crecimiento co
 
 ---
 
-## 1. Módulos y Funcionalidades Requeridas (Iteración 03)
+## 1. Módulos y Funcionalidades Requeridas (Iteración 04)
 
 | Módulo / Componente | Descripción funcional | Prioridad |
 | :--- | :--- | :---: |
+| **Flujos de Trabajo con IA (Local/Cloud)** | Integración con modelo Local (Ollama) o Cloud (OpenAI API standard) mediante prompts de sistema especializados para cada sección. | P1 |
+| **Prompts Estáticos en Markdown** | Cada sección dispone de su prompt oficial embebido como fichero markdown estático (`agenda_planner.md`, `socratic_tutor.md`, `project_guide.md`, `active_recall_generator.md`). | P1 |
+| **Auditoría e Inspección de Prompts** | Modal interactivo para que educadores y alumnos puedan inspeccionar en cualquier momento las instrucciones y reglas pedagógicas que guían a la IA en cada sección. | P1 |
+| **Planificador de Estudio IA (Agenda)** | Generación autónoma de bloques de estudio espaciados con objetivos activos e inserción directa en el calendario. | P1 |
+| **Generador de Desafíos Active Recall** | Creación bajo demanda de tarjetas de recuperación activa para comprobar la comprensión sin respuestas fáciles. | P1 |
 | **Google Connectors (Real & Demo)** | Doble modalidad: **Modo Demo** (entorno precargado inmediato para evaluación) y **Conector Real Google** con Google Identity Services (GIS), Client ID configurable y tokens OAuth 2.0. | P1 |
 | **Google Calendar Real API** | Sincronización real vía REST API (`/calendar/v3/calendars/primary/events`) para crear bloques de estudio en el calendario personal del alumno y leer eventos lectivos. | P1 |
 | **Google Drive Real API** | Consulta real vía REST API (`/drive/v3/files`) para listar documentos de trabajo (Google Docs, Sheets, Slides, PDFs) con enlaces directos para visualización y trabajo autónomo. | P1 |

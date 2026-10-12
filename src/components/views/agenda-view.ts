@@ -1,5 +1,7 @@
 import { db } from '../../services/storage';
 import { googleCalendarService } from '../../services/google-calendar';
+import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
+import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { StudyBlock, EventType } from '../../types/agenda';
 
@@ -85,7 +87,15 @@ export function renderAgendaView(container: HTMLElement): void {
             <p class="text-xs text-slate-500 mt-0.5">${t('agenda.subtitle')}</p>
           </div>
 
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-view-agenda-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver contenido del prompt estático de esta sección">
+              <span>📄</span>
+              <span>Prompt Agenda</span>
+            </button>
+            <button id="btn-ai-plan" class="px-3.5 py-2 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold transition-all flex items-center gap-1.5">
+              <span>🤖</span>
+              <span>Planificar con IA</span>
+            </button>
             <button id="btn-new-block" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
               <span>＋</span>
               <span>${t('agenda.addBlock')}</span>
@@ -257,6 +267,34 @@ export function renderAgendaView(container: HTMLElement): void {
         await loadData();
       } catch (err: any) {
         alert(err.message || 'Error al sincronizar con Google Calendar');
+      }
+    });
+
+    // Prompt Viewer modal trigger
+    container.querySelector('#btn-view-agenda-prompt')?.addEventListener('click', () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      renderPromptViewerModal(
+        modalRoot, 
+        'Prompt Estático: Planificador de Agenda (agenda_planner.md)', 
+        STATIC_PROMPTS.agenda, 
+        { onClose: () => { modalRoot.innerHTML = ''; } }
+      );
+    });
+
+    // AI Study Plan Workflow trigger
+    const aiPlanBtn = container.querySelector('#btn-ai-plan');
+    aiPlanBtn?.addEventListener('click', async () => {
+      if (aiPlanBtn) aiPlanBtn.innerHTML = `<span>⏳ Planificando...</span>`;
+      try {
+        const blocks = await aiClientService.generateStudyPlan('Biología y Matemáticas', 'Preparación de Hitos Semanales');
+        for (const b of blocks) {
+          await db.studyBlocks.add(b);
+        }
+        await loadData();
+      } catch (err: any) {
+        alert(err.message || 'Error al ejecutar flujo de planificación IA');
+      } finally {
+        if (aiPlanBtn) aiPlanBtn.innerHTML = `<span>🤖 Planificar con IA</span>`;
       }
     });
 

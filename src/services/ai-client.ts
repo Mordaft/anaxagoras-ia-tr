@@ -1,6 +1,19 @@
 import type { AISettings } from '../types/ai';
-import type { ChatMessage } from '../types/study';
+import type { ChatMessage, FlashCard } from '../types/study';
+import type { StudyBlock } from '../types/agenda';
 import { db } from './storage';
+
+import socraticTutorPrompt from '../prompts/socratic_tutor.md?raw';
+import agendaPlannerPrompt from '../prompts/agenda_planner.md?raw';
+import projectGuidePrompt from '../prompts/project_guide.md?raw';
+import activeRecallPrompt from '../prompts/active_recall_generator.md?raw';
+
+export const STATIC_PROMPTS = {
+  socratic: socraticTutorPrompt,
+  agenda: agendaPlannerPrompt,
+  project: projectGuidePrompt,
+  recall: activeRecallPrompt,
+};
 
 export class AIClientService {
   public async getSettings(): Promise<AISettings> {
@@ -69,38 +82,32 @@ export class AIClientService {
     } catch {
       return { 
         success: false, 
-        message: `No se pudo conectar con ${settings.endpointUrl}. Modo socrático local activado para la demostración.` 
+        message: `No se pudo conectar con ${settings.endpointUrl}. Modo socrático local simulado activo.` 
       };
     }
   }
 
-  public async generateSocraticResponse(
-    studentMessage: string,
-    subject: string,
-    topic: string,
-    history: ChatMessage[]
-  ): Promise<ChatMessage> {
+  /**
+   * Ejecuta una llamada genérica al modelo LLM (Local Ollama o Cloud OpenAI)
+   * inyectando un prompt de sistema markdown estático.
+   */
+  public async callLLM(
+    systemPrompt: string, 
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<string | null> {
     const settings = await this.getSettings();
 
-    // Check if real endpoint is accessible
     try {
       const completionUrl = `${settings.endpointUrl.replace(/\/+$/, '')}/chat/completions`;
-      const systemPrompt = `Eres Anaxagoras AI, un Tutor Educativo Socrático para estudiantes de 6 a 18 años.
-Asignatura: ${subject}. Tema: ${topic}.
-REGLA PEDAGÓGICA SAGRADA:
-NUNCA des la solución directa o el trabajo hecho. Tu meta es que el estudiante aprenda y piense por sí mismo.
-Si el estudiante te pide 'dame la respuesta', 'resuélvelo tú' o 'hazme el texto', debes negarte amablemente y responder con una pregunta socrática o una pista intermedia que lo haga pensar.
-Sé entusiasta, claro y conciso (máximo 3 párrafos cortos). Termina siempre con UNA sola pregunta estimulante.`;
-
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (settings.apiKey) {
         headers['Authorization'] = `Bearer ${settings.apiKey}`;
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
 
-      const res = await fetch(completionUrl, {
+      const response = await fetch(completionUrl, {
         method: 'POST',
         headers,
         signal: controller.signal,
@@ -108,35 +115,164 @@ Sé entusiasta, claro y conciso (máximo 3 párrafos cortos). Termina siempre co
           model: settings.modelName,
           messages: [
             { role: 'system', content: systemPrompt },
-            ...history.slice(-4).map(m => ({ role: m.role === 'tutor' ? 'assistant' : 'user', content: m.content })),
-            { role: 'user', content: studentMessage }
+            ...messages
           ],
           temperature: settings.temperature
         })
       });
       clearTimeout(timeoutId);
 
-      if (res.ok) {
-        const data = await res.json();
+      if (response.ok) {
+        const data = await response.json();
         const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          return {
-            id: `msg_${Date.now()}`,
-            role: 'tutor',
-            content,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSocraticQuestion: true,
-            suggestedPrompts: this.extractSuggestedPrompts(content, subject)
-          };
-        }
+        if (content) return content.trim();
       }
-    } catch {
-      // Fallback to intelligent Socratic tutor logic
+    } catch (err) {
+      console.warn('[AI Client] Conexión directa no disponible, ejecutando motor socrático integrado:', err);
     }
 
-    // Pedagogical Fallback Engine (Immediate feedback demonstrating Socratic principles)
-    await new Promise(resolve => setTimeout(resolve, 800));
+    return null;
+  }
+
+  /**
+   * Flujo 1: Tutor Socrático
+   */
+  public async generateSocraticResponse(
+    studentMessage: string,
+    subject: string,
+    topic: string,
+    history: ChatMessage[]
+  ): Promise<ChatMessage> {
+    const systemInstruction = `${STATIC_PROMPTS.socratic}\n\nCONTEXTO ACTUAL:\nAsignatura: ${subject}\nTema: ${topic}`;
+    const formattedHistory = history.slice(-6).map(m => ({
+      role: m.role === 'tutor' ? ('assistant' as const) : ('user' as const),
+      content: m.content
+    }));
+
+    const llmOutput = await this.callLLM(systemInstruction, [
+      ...formattedHistory,
+      { role: 'user', content: studentMessage }
+    ]);
+
+    if (llmOutput) {
+      return {
+        id: `msg_${Date.now()}`,
+        role: 'tutor',
+        content: llmOutput,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isSocraticQuestion: true,
+        suggestedPrompts: [
+          '¿Cómo relaciono esto con la teoría?',
+          'Quiero resolver el siguiente paso',
+          'Dame un ejemplo similar'
+        ]
+      };
+    }
+
+    // Motor integrado de reserva
+    await new Promise(resolve => setTimeout(resolve, 600));
     return this.createSimulatedSocraticResponse(studentMessage, subject);
+  }
+
+  /**
+   * Flujo 2: Planificador de Agenda Inteligente
+   */
+  public async generateStudyPlan(subject: string, examTopic: string): Promise<StudyBlock[]> {
+    const prompt = `${STATIC_PROMPTS.agenda}\n\nGenera 2 bloques de estudio recomendados para preparar el examen de ${subject} sobre "${examTopic}". Responde únicamente en formato JSON.`;
+
+    const llmOutput = await this.callLLM(prompt, [
+      { role: 'user', content: `Generar planificación para ${subject}: ${examTopic}` }
+    ]);
+
+    if (llmOutput) {
+      try {
+        const jsonMatch = llmOutput.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return parsed.map((item: any, idx: number) => ({
+            title: item.title || `Estudio activo ${idx + 1}`,
+            subject: item.subject || subject,
+            date: new Date(Date.now() + 86400000 * (idx + 1)).toISOString().split('T')[0],
+            startTime: idx === 0 ? '17:00' : '18:30',
+            durationMinutes: item.durationMinutes || 45,
+            type: 'study_session',
+            completed: false,
+            notes: item.notes || 'Planificado por Anaxagoras AI',
+            syncedWithGoogle: false
+          }));
+        }
+      } catch (err) {
+        console.warn('[AI Client] No se pudo parsear el plan generado por el LLM:', err);
+      }
+    }
+
+    // Fallback pedagógico estructurado
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const dayAfter = new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0];
+
+    return [
+      {
+        title: `Esquema y Recuperación: ${examTopic}`,
+        subject: subject,
+        date: tomorrow,
+        startTime: '17:15',
+        durationMinutes: 45,
+        type: 'study_session',
+        completed: false,
+        notes: 'Dibujar mapa conceptual sin mirar el libro y verificar dudas después.',
+        syncedWithGoogle: true,
+        googleEventId: `gcal_${Date.now()}`
+      },
+      {
+        title: `Resolución de Problemas Clave: ${subject}`,
+        subject: subject,
+        date: dayAfter,
+        startTime: '18:00',
+        durationMinutes: 40,
+        type: 'study_session',
+        completed: false,
+        notes: 'Práctica activa de casos prácticos con el Tutor Socrático.',
+        syncedWithGoogle: true,
+        googleEventId: `gcal_${Date.now() + 1}`
+      }
+    ];
+  }
+
+  /**
+   * Flujo 3: Generador de Tarjetas de Memoria Activa (Active Recall)
+   */
+  public async generateActiveRecallCard(subject: string, topic: string): Promise<FlashCard> {
+    const prompt = `${STATIC_PROMPTS.recall}\n\nGenera una tarjeta conceptual de autoevaluación para la materia ${subject} y tema ${topic}. Formato JSON estricto.`;
+
+    const llmOutput = await this.callLLM(prompt, [
+      { role: 'user', content: `Crear desafío de active recall sobre ${topic}` }
+    ]);
+
+    if (llmOutput) {
+      try {
+        const jsonMatch = llmOutput.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          return {
+            id: `card_${Date.now()}`,
+            concept: parsed.concept || `¿Cómo definirías la clave de ${topic}?`,
+            hint: parsed.hint || 'Piensa en las causas fundamentales y consecuencias.',
+            explanation: parsed.explanation || 'Resumen conceptual para verificar comprensión activa.',
+            masteryScore: 0
+          };
+        }
+      } catch (err) {
+        console.warn('[AI Client] Fallo al parsear flashcard de LLM:', err);
+      }
+    }
+
+    return {
+      id: `card_${Date.now()}`,
+      concept: `¿Cómo influyen los factores limitantes en ${topic} (${subject})?`,
+      hint: 'Recuerda qué variable impide que el proceso aumente indefinidamente.',
+      explanation: 'El factor más escaso o alejado del óptimo determinará el rendimiento máximo del sistema.',
+      masteryScore: 0
+    };
   }
 
   private createSimulatedSocraticResponse(studentMessage: string, subject: string): ChatMessage {
@@ -190,14 +326,6 @@ Siguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocur
       isSocraticQuestion: true,
       suggestedPrompts: suggestions
     };
-  }
-
-  private extractSuggestedPrompts(_content: string, subject: string): string[] {
-    return [
-      `¿Cómo se relaciona esto con ${subject}?`,
-      'Quiero intentar resolver el siguiente paso',
-      'Dame una analogía de la vida real'
-    ];
   }
 }
 
