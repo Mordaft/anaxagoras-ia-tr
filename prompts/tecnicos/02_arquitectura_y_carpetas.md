@@ -8,9 +8,6 @@ Estructura modular con **HTML5 + Vanilla TypeScript + TailwindCSS**, PWA, i18n c
 
 ```text
 anaxagoras-ia-tr/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml           # CI/CD: Despliegue automático a GitHub Pages
 ├── public/
 │   ├── manifest.webmanifest     # Metadatos PWA (iconos, nombres, theme-color)
 │   ├── sw.js                    # Service Worker con caché offline y gestión de versiones

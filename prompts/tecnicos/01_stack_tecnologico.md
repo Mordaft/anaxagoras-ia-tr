@@ -9,7 +9,7 @@ Define las tecnologías, dependencias y herramientas para el desarrollo de la ap
 - **Estilos:** TailwindCSS
 - **Gestor de Paquetes:** pnpm
 - **Runtime / Entorno:** Node.js LTS
-- **Despliegue / Hosting:** GitHub Pages (repositorio público `Mordaft/anaxagoras-ia-tr` con GitHub Actions)
+- **Despliegue / Hosting:** GitHub Pages (publicación autónoma mediante la herramienta `gh-pages`)
 - **Capacidades Offline & Móvil:** Progressive Web App (PWA) con Service Worker versionado y soporte de actualizaciones automáticas
 - **Internacionalización:** Estándar `i18next` con diccionarios modulares en JSON (Castellano, Català, Galego, Euskera, Valencià)
 
@@ -33,7 +33,7 @@ Define las tecnologías, dependencias y herramientas para el desarrollo de la ap
 - **Comando de inicio local:** `pnpm run dev`
 - **Puerto por defecto:** 8086
 - **Requisitos de build:** `pnpm run build`
-- **Flujo CI/CD:** `.github/workflows/deploy.yml` automático en push a `main` hacia GitHub Pages
+- **Comando de publicación:** `pnpm run deploy` (ejecuta `gh-pages -d dist`)
 
 ---
 

@@ -19,7 +19,7 @@ Pautas de calidad técnica que la IA debe verificar en cada generación de códi
 ---
 
 ## 3. Despliegue en GitHub Pages
-- Flujo totalmente declarativo en `.github/workflows/deploy.yml`.
+- Publicación autónoma mediante el comando `pnpm run deploy` utilizando la herramienta `gh-pages` (`gh-pages -d dist`).
 - El build estático generado en `dist/` debe ser autocontenido y no depender de rutas absolutas `/assets/...`.
 
 ---
