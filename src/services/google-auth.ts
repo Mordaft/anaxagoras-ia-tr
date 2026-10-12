@@ -33,28 +33,43 @@ class GoogleAuthService {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         this.state = JSON.parse(saved);
+        // Ensure distinct demo emails and IDs are synchronized when loading persisted state
+        if (this.state.mode === 'demo' && this.state.user) {
+          if (this.state.user.gradeKey === '2batx') {
+            this.state.user.id = 'google_user_demo_2batx';
+            this.state.user.name = 'Álvaro Martín (2º Bachillerato)';
+            this.state.user.email = 'alvaro.martin@ies-catalunya.edu.cat';
+          } else {
+            this.state.user.id = 'google_user_demo_1eso';
+            this.state.user.name = 'Marc Vidal (1º de ESO)';
+            this.state.user.email = 'marc.vidal@ies-catalunya.edu.cat';
+          }
+        }
       } else {
-        // Default to Demo Mode with active profile for seamless evaluation
-        this.setDemoState();
+        // Default to Demo Mode with active 1º ESO profile for seamless evaluation
+        this.setDemoState('1eso');
       }
     } catch {
-      this.setDemoState();
+      this.setDemoState('1eso');
     }
   }
 
-  private setDemoState(): void {
+  private setDemoState(grade: '1eso' | '2batx' = '1eso'): void {
+    const isBatx = grade === '2batx';
     this.state = {
       isAuthenticated: true,
       mode: 'demo',
       clientId: '',
       user: {
-        id: 'google_user_demo_01',
-        name: 'Marc Vidal (1º de ESO)',
-        email: 'marc.vidal@ies-catalunya.edu.cat',
-        avatarUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
-        gradeLevel: '1º de ESO (12 años)',
-        gradeKey: '1eso',
-        stageName: 'Operaciones Concretas (Piaget)',
+        id: isBatx ? 'google_user_demo_2batx' : 'google_user_demo_1eso',
+        name: isBatx ? 'Álvaro Martín (2º Bachillerato)' : 'Marc Vidal (1º de ESO)',
+        email: isBatx ? 'alvaro.martin@ies-catalunya.edu.cat' : 'marc.vidal@ies-catalunya.edu.cat',
+        avatarUrl: isBatx 
+          ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
+          : 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80',
+        gradeLevel: isBatx ? '2º de Bachillerato (17-18 años)' : '1º de ESO (12 años)',
+        gradeKey: grade,
+        stageName: isBatx ? 'Operaciones Formales (Piaget)' : 'Operaciones Concretas (Piaget)',
         connectedAt: new Date().toISOString(),
         mode: 'demo'
       },
@@ -95,37 +110,42 @@ class GoogleAuthService {
     this.saveState();
   }
 
-  public async connectDemo(): Promise<GoogleProfile> {
-    this.setDemoState();
+  public async connectDemo(grade: '1eso' | '2batx' = '1eso'): Promise<GoogleProfile> {
+    this.setDemoState(grade);
     return this.state.user!;
   }
 
   public setGradeProfile(grade: '1eso' | '2batx'): void {
     if (!this.state.user) {
-      this.setDemoState();
+      this.setDemoState(grade);
+      return;
     }
 
     if (grade === '1eso') {
       this.state.user = {
-        ...this.state.user!,
-        name: this.state.mode === 'demo' ? 'Marc Vidal (1º de ESO)' : this.state.user!.name,
+        ...this.state.user,
+        id: this.state.mode === 'demo' ? 'google_user_demo_1eso' : this.state.user.id,
+        name: this.state.mode === 'demo' ? 'Marc Vidal (1º de ESO)' : this.state.user.name,
+        email: this.state.mode === 'demo' ? 'marc.vidal@ies-catalunya.edu.cat' : this.state.user.email,
         gradeLevel: '1º de ESO (12 años)',
         gradeKey: '1eso',
         stageName: 'Operaciones Concretas (Piaget)',
         avatarUrl: this.state.mode === 'demo' 
           ? 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80'
-          : this.state.user!.avatarUrl
+          : this.state.user.avatarUrl
       };
     } else {
       this.state.user = {
-        ...this.state.user!,
-        name: this.state.mode === 'demo' ? 'Álvaro Martín (2º Bachillerato)' : this.state.user!.name,
+        ...this.state.user,
+        id: this.state.mode === 'demo' ? 'google_user_demo_2batx' : this.state.user.id,
+        name: this.state.mode === 'demo' ? 'Álvaro Martín (2º Bachillerato)' : this.state.user.name,
+        email: this.state.mode === 'demo' ? 'alvaro.martin@ies-catalunya.edu.cat' : this.state.user.email,
         gradeLevel: '2º de Bachillerato (17-18 años)',
         gradeKey: '2batx',
         stageName: 'Operaciones Formales (Piaget)',
         avatarUrl: this.state.mode === 'demo'
           ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-          : this.state.user!.avatarUrl
+          : this.state.user.avatarUrl
       };
     }
     this.saveState();
