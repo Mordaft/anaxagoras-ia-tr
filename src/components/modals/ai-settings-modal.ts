@@ -1,4 +1,5 @@
 import { aiClientService } from '../../services/ai-client';
+import { t } from '../../services/i18n';
 
 export interface AISettingsModalCallbacks {
   onSaved: () => void;
@@ -18,8 +19,8 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                 🤖
               </div>
               <div>
-                <h3 class="font-display font-bold text-lg text-slate-900">Configuración del Modelo de IA</h3>
-                <p class="text-xs text-slate-500">Inferencia local o en la nube con API estándar OpenAI</p>
+                <h3 class="font-display font-bold text-lg text-slate-900">${t('aiModal.title')}</h3>
+                <p class="text-xs text-slate-500">${t('aiModal.subtitle')}</p>
               </div>
             </div>
             <button id="btn-close-modal" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition-colors">
@@ -32,15 +33,15 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
             
             <!-- Provider Selector -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Tipo de Inferencia</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">${t('aiModal.inferenceType')}</label>
               <div class="grid grid-cols-2 gap-3">
                 <label class="flex items-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${
                   settings.provider === 'local' ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20' : 'border-slate-200 hover:bg-slate-50'
                 }">
                   <input type="radio" name="provider" value="local" class="text-brand-600 focus:ring-brand-500" ${settings.provider === 'local' ? 'checked' : ''} />
                   <div>
-                    <span class="block text-xs font-bold text-slate-800">Local (Privacidad Total)</span>
-                    <span class="block text-[11px] text-slate-500">Ollama, LM Studio, vLLM</span>
+                    <span class="block text-xs font-bold text-slate-800">${t('aiModal.localTitle')}</span>
+                    <span class="block text-[11px] text-slate-500">${t('aiModal.localDesc')}</span>
                   </div>
                 </label>
 
@@ -49,8 +50,8 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                 }">
                   <input type="radio" name="provider" value="cloud" class="text-brand-600 focus:ring-brand-500" ${settings.provider === 'cloud' ? 'checked' : ''} />
                   <div>
-                    <span class="block text-xs font-bold text-slate-800">Cloud (OpenAI API)</span>
-                    <span class="block text-[11px] text-slate-500">OpenAI, Groq, OpenRouter</span>
+                    <span class="block text-xs font-bold text-slate-800">${t('aiModal.cloudTitle')}</span>
+                    <span class="block text-[11px] text-slate-500">${t('aiModal.cloudDesc')}</span>
                   </div>
                 </label>
               </div>
@@ -58,7 +59,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
 
             <!-- Endpoint URL -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">URL del Endpoint API</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">${t('aiModal.endpointUrl')}</label>
               <input 
                 type="url" 
                 id="input-endpoint" 
@@ -67,12 +68,12 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                 class="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all font-mono text-xs" 
                 required 
               />
-              <span class="text-[11px] text-slate-400 mt-1 block">Compatible con /v1/chat/completions y /v1/models</span>
+              <span class="text-[11px] text-slate-400 mt-1 block">${t('aiModal.endpointHint')}</span>
             </div>
 
             <!-- Model Name -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Nombre del Modelo</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">${t('aiModal.modelName')}</label>
               <input 
                 type="text" 
                 id="input-model" 
@@ -85,7 +86,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
 
             <!-- API Key (Optional) -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">API Key (Opcional en Local)</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">${t('aiModal.apiKey')}</label>
               <input 
                 type="password" 
                 id="input-apikey" 
@@ -93,16 +94,16 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                 placeholder="sk-..."
                 class="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all font-mono text-xs" 
               />
-              <span class="text-[11px] text-slate-400 mt-1 block">Guardada de forma segura únicamente en tu navegador (IndexedDB local).</span>
+              <span class="text-[11px] text-slate-400 mt-1 block">${t('aiModal.apiKeyHint')}</span>
             </div>
 
             <!-- Socratic Strictness -->
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Modo Pedagógico Socrático</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">${t('aiModal.socraticMode')}</label>
               <select id="select-strictness" class="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-                <option value="high" ${settings.socraticStrictness === 'high' ? 'selected' : ''}>Estricto: Nunca da soluciones directas (100% preguntas de razonamiento)</option>
-                <option value="balanced" ${settings.socraticStrictness === 'balanced' ? 'selected' : ''}>Equilibrado: Pistas intermedias y ejemplos análogos</option>
-                <option value="exploratory" ${settings.socraticStrictness === 'exploratory' ? 'selected' : ''}>Exploratorio: Explicaciones conceptuales y desafíos</option>
+                <option value="high" ${settings.socraticStrictness === 'high' ? 'selected' : ''}>${t('aiModal.strictHigh')}</option>
+                <option value="balanced" ${settings.socraticStrictness === 'balanced' ? 'selected' : ''}>${t('aiModal.strictBalanced')}</option>
+                <option value="exploratory" ${settings.socraticStrictness === 'exploratory' ? 'selected' : ''}>${t('aiModal.strictExploratory')}</option>
               </select>
             </div>
 
@@ -117,7 +118,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                 class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
               >
                 <span>⚡</span>
-                <span>Probar Conexión</span>
+                <span>${t('aiModal.testConnection')}</span>
               </button>
 
               <div class="flex items-center gap-2">
@@ -126,13 +127,13 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
                   id="btn-cancel" 
                   class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors"
                 >
-                  Cancelar
+                  ${t('aiModal.cancel')}
                 </button>
                 <button 
                   type="submit" 
                   class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 transition-all"
                 >
-                  Guardar Cambios
+                  ${t('aiModal.save')}
                 </button>
               </div>
             </div>
@@ -154,7 +155,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
       const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value;
       const providerRadio = container.querySelector('input[name="provider"]:checked') as HTMLInputElement;
 
-      if (testBtn) testBtn.innerHTML = `<span>⏳</span><span>Probando...</span>`;
+      if (testBtn) testBtn.innerHTML = `<span>⏳</span><span>${t('aiModal.testing')}</span>`;
 
       const result = await aiClientService.testConnection({
         provider: providerRadio?.value as any || 'local',
@@ -166,7 +167,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
         updatedAt: new Date().toISOString()
       });
 
-      if (testBtn) testBtn.innerHTML = `<span>⚡</span><span>Probar Conexión</span>`;
+      if (testBtn) testBtn.innerHTML = `<span>⚡</span><span>${t('aiModal.testConnection')}</span>`;
 
       if (resultBox) {
         resultBox.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700', 'bg-amber-50', 'text-amber-700');

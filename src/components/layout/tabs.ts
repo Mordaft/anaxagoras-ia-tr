@@ -1,3 +1,5 @@
+import { t } from '../../services/i18n';
+
 export type ActiveTab = 'agenda' | 'study' | 'tasks';
 
 export interface TabsCallbacks {
@@ -19,7 +21,7 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
               : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
           }">
             <span class="text-base sm:text-lg">📅</span>
-            <span>Agenda</span>
+            <span>${t('tabs.agenda')}</span>
             <span class="ml-1 px-1.5 py-0.5 text-[11px] font-bold rounded-full ${
               activeTab === 'agenda' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-600'
             }">3</span>
@@ -32,9 +34,9 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
               : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
           }">
             <span class="text-base sm:text-lg">💡</span>
-            <span>Estudio / Repaso</span>
+            <span>${t('tabs.study')}</span>
             <span class="ml-1 px-1.5 py-0.5 text-[11px] font-bold rounded-full bg-accent-emerald/10 text-accent-emerald">
-              Tutor IA
+              ${t('tabs.tutorBadge')}
             </span>
           </button>
 
@@ -45,7 +47,7 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
               : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
           }">
             <span class="text-base sm:text-lg">📝</span>
-            <span>Trabajos</span>
+            <span>${t('tabs.tasks')}</span>
             <span class="ml-1 px-1.5 py-0.5 text-[11px] font-bold rounded-full ${
               activeTab === 'tasks' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-600'
             }">1</span>
@@ -55,7 +57,7 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
         <!-- Right Quick Tip / Slogan -->
         <div class="hidden md:flex items-center gap-2 text-xs text-slate-500">
           <span class="w-2 h-2 rounded-full bg-accent-cyan"></span>
-          <span>Pensamiento crítico activo • Sin trampas de IA</span>
+          <span>${t('app.criticalThinking')}</span>
         </div>
       </div>
     </nav>

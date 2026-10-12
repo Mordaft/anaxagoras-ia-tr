@@ -1,4 +1,6 @@
 import './styles/index.css';
+import { i18n } from './services/i18n';
+import { pwaService } from './services/pwa-service';
 import { initializeStarterData } from './services/storage';
 import { renderNavbar } from './components/layout/navbar';
 import { renderTabs, type ActiveTab } from './components/layout/tabs';
@@ -23,13 +25,25 @@ class AnaxagorasApp {
   }
 
   public async start(): Promise<void> {
-    // 1. Initialize local IndexedDB starter dataset
+    // 1. Initialize standard i18n system first
+    await i18n.init();
+
+    // 2. Initialize local IndexedDB starter dataset
     await initializeStarterData();
 
-    // 2. Render layout
+    // 3. Register PWA Service Worker with update detection
+    await pwaService.register();
+
+    // 4. Listen for language changes and re-render entire interface reactively
+    i18n.subscribe(() => {
+      this.renderHeaderAndTabs();
+      this.switchView(this.activeTab);
+    });
+
+    // 5. Render layout
     this.renderHeaderAndTabs();
 
-    // 3. Render initial view
+    // 6. Render initial view
     this.switchView(this.activeTab);
   }
 
@@ -37,8 +51,8 @@ class AnaxagorasApp {
     renderNavbar(this.navbarRoot, {
       onOpenAISettings: () => this.openAISettingsModal(),
       onOpenAuth: () => this.openAuthModal(),
-      onLanguageChange: (lang) => {
-        console.log(`[Anaxagoras AI] Idioma seleccionado: ${lang}`);
+      onLanguageChange: () => {
+        // Handled reactively by i18n subscriber
       }
     });
 

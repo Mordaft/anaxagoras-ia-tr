@@ -1,4 +1,5 @@
 import { googleAuthService } from '../../services/google-auth';
+import { t } from '../../services/i18n';
 
 export interface AuthModalCallbacks {
   onClose: () => void;
@@ -24,8 +25,8 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
               </svg>
             </div>
             <div>
-              <h3 class="font-display font-bold text-lg text-slate-900">Cuenta de Google</h3>
-              <p class="text-xs text-slate-500">Google OAuth 2.0 • Calendar & Drive</p>
+              <h3 class="font-display font-bold text-lg text-slate-900">${t('authModal.title')}</h3>
+              <p class="text-xs text-slate-500">${t('authModal.subtitle')}</p>
             </div>
           </div>
           <button id="btn-close-auth" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition-colors">
@@ -52,35 +53,35 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
 
               <!-- Connected Services Status -->
               <div class="space-y-2">
-                <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400">Recursos autorizados</h5>
+                <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400">${t('authModal.authorizedResources')}</h5>
                 
                 <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <div class="flex items-center gap-2.5">
                     <span class="text-base">📅</span>
                     <div>
-                      <p class="text-xs font-bold text-slate-800">Google Calendar</p>
-                      <p class="text-[11px] text-slate-500">Sincronización de bloques de estudio</p>
+                      <p class="text-xs font-bold text-slate-800">${t('authModal.calendarTitle')}</p>
+                      <p class="text-[11px] text-slate-500">${t('authModal.calendarDesc')}</p>
                     </div>
                   </div>
-                  <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Activo</span>
+                  <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">${t('authModal.statusActive')}</span>
                 </div>
 
                 <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <div class="flex items-center gap-2.5">
                     <span class="text-base">📁</span>
                     <div>
-                      <p class="text-xs font-bold text-slate-800">Google Drive</p>
-                      <p class="text-[11px] text-slate-500">Vinculación de documentos de entregables</p>
+                      <p class="text-xs font-bold text-slate-800">${t('authModal.driveTitle')}</p>
+                      <p class="text-[11px] text-slate-500">${t('authModal.driveDesc')}</p>
                     </div>
                   </div>
-                  <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Activo</span>
+                  <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">${t('authModal.statusActive')}</span>
                 </div>
               </div>
 
               <!-- Disconnect Action -->
               <div class="pt-4 border-t border-slate-100">
                 <button id="btn-disconnect-google" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors">
-                  Desconectar Cuenta de Google
+                  ${t('authModal.disconnect')}
                 </button>
               </div>
             `
@@ -88,17 +89,17 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
               <!-- Connect Flow Explanation -->
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                 <p class="text-xs text-slate-600 leading-relaxed">
-                  Conectar tu cuenta educativa o personal de Google permite:
+                  ${t('authModal.connectExplanation')}
                 </p>
                 <ul class="text-xs text-slate-600 space-y-2 pl-2">
                   <li class="flex items-center gap-2">
-                    <span class="text-emerald-500">✓</span> Exportar tus sesiones de estudio a <strong>Google Calendar</strong>.
+                    <span class="text-emerald-500">✓</span> ${t('authModal.benefit1')}
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-emerald-500">✓</span> Adjuntar tus apuntes y borradores desde <strong>Google Drive</strong>.
+                    <span class="text-emerald-500">✓</span> ${t('authModal.benefit2')}
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-emerald-500">✓</span> Garantizar que tus datos permanezcan privados y bajo tu control.
+                    <span class="text-emerald-500">✓</span> ${t('authModal.benefit3')}
                   </li>
                 </ul>
               </div>
@@ -112,7 +113,7 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
-                  <span>Iniciar Sesión con Google</span>
+                  <span>${t('authModal.connectButton')}</span>
                 </button>
               </div>
             `

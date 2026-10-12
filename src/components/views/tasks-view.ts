@@ -1,5 +1,6 @@
 import { db } from '../../services/storage';
 import { googleDriveService } from '../../services/google-drive';
+import { t } from '../../services/i18n';
 import type { ProjectTask, TaskPhase } from '../../types/tasks';
 
 export function renderTasksView(container: HTMLElement): void {
@@ -16,15 +17,15 @@ export function renderTasksView(container: HTMLElement): void {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>Trabajos y Proyectos Escolares</span>
-              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">Integración Google Drive</span>
+              <span>${t('tasks.title')}</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">${t('tasks.driveIntegration')}</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Asistente por fases para elaborar trabajos rigurosos garantizando tu autoría e ideas propias.</p>
+            <p class="text-xs text-slate-500 mt-0.5">${t('tasks.subtitle')}</p>
           </div>
 
           <button id="btn-new-task" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5 self-start sm:self-auto">
             <span>＋</span>
-            <span>Nuevo Trabajo</span>
+            <span>${t('tasks.newTask')}</span>
           </button>
         </div>
 
@@ -35,8 +36,8 @@ export function renderTasksView(container: HTMLElement): void {
               ? `
               <div class="p-12 text-center glass-panel rounded-3xl">
                 <span class="text-4xl">📝</span>
-                <p class="mt-2 text-sm font-semibold text-slate-700">No tienes trabajos activos registrados.</p>
-                <p class="text-xs text-slate-400">Pulsa en "Nuevo Trabajo" para empezar a estructurar un entregable.</p>
+                <p class="mt-2 text-sm font-semibold text-slate-700">${t('tasks.emptyTitle')}</p>
+                <p class="text-xs text-slate-400">${t('tasks.emptyDesc')}</p>
               </div>
             `
               : tasks
@@ -58,20 +59,20 @@ export function renderTasksView(container: HTMLElement): void {
 
                   <div class="flex items-center gap-3">
                     <div class="text-left sm:text-right">
-                      <span class="block text-xs font-bold text-slate-700">Fecha Límite: ${task.dueDate}</span>
-                      <span class="text-[11px] text-brand-600 font-semibold">Autonomía: ${calculateTaskScore(task)}%</span>
+                      <span class="block text-xs font-bold text-slate-700">${t('tasks.dueDate')}: ${task.dueDate}</span>
+                      <span class="text-[11px] text-brand-600 font-semibold">${t('tasks.autonomy')}: ${calculateTaskScore(task)}%</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- 4-Phases Progression Stepper -->
                 <div>
-                  <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fases de Elaboración</span>
+                  <span class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">${t('tasks.phasesTitle')}</span>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    ${renderPhaseBadge(task.id!, 'planning', '1. Planificación', task.currentPhase)}
-                    ${renderPhaseBadge(task.id!, 'research', '2. Investigación', task.currentPhase)}
-                    ${renderPhaseBadge(task.id!, 'writing', '3. Redacción Propia', task.currentPhase)}
-                    ${renderPhaseBadge(task.id!, 'review', '4. Revisión Final', task.currentPhase)}
+                    ${renderPhaseBadge(task.id!, 'planning', t('tasks.phases.planning'), task.currentPhase)}
+                    ${renderPhaseBadge(task.id!, 'research', t('tasks.phases.research'), task.currentPhase)}
+                    ${renderPhaseBadge(task.id!, 'writing', t('tasks.phases.writing'), task.currentPhase)}
+                    ${renderPhaseBadge(task.id!, 'review', t('tasks.phases.review'), task.currentPhase)}
                   </div>
                 </div>
 
@@ -83,17 +84,17 @@ export function renderTasksView(container: HTMLElement): void {
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <span class="text-base">📁</span>
-                        <h4 class="font-bold text-xs text-slate-800">Documentos en Google Drive</h4>
+                        <h4 class="font-bold text-xs text-slate-800">${t('tasks.driveDocs')}</h4>
                       </div>
                       <button data-task-drive="${task.id}" class="btn-attach-drive text-[11px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1">
-                        <span>＋ Vincular Archivo</span>
+                        <span>${t('tasks.attachDrive')}</span>
                       </button>
                     </div>
 
                     <div class="space-y-2">
                       ${
                         task.driveFiles.length === 0
-                          ? `<p class="text-xs text-slate-400 py-2">No hay archivos vinculados de Drive todavía.</p>`
+                          ? `<p class="text-xs text-slate-400 py-2">${t('tasks.noDriveFiles')}</p>`
                           : task.driveFiles
                               .map(
                                 file => `
@@ -105,7 +106,7 @@ export function renderTasksView(container: HTMLElement): void {
                                 <span class="text-[10px] text-slate-400 font-mono">${file.lastModified || 'Sincronizado'}</span>
                               </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">Drive Sync</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">${t('tasks.driveSync')}</span>
                           </div>
                         `
                               )
@@ -119,10 +120,10 @@ export function renderTasksView(container: HTMLElement): void {
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <span class="text-base">🛡️</span>
-                        <h4 class="font-bold text-xs text-brand-900">Medidor de Autonomía del Estudiante</h4>
+                        <h4 class="font-bold text-xs text-brand-900">${t('tasks.autonomyMeter')}</h4>
                       </div>
                       <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
-                        ${calculateTaskScore(task)}% propio
+                        ${calculateTaskScore(task)}% ${t('tasks.ownEffort')}
                       </span>
                     </div>
 
@@ -161,18 +162,18 @@ export function renderTasksView(container: HTMLElement): void {
         <!-- New Task Modal -->
         <div id="new-task-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
-            <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Nuevo Trabajo o Entregable</h3>
-            <p class="text-xs text-slate-500 mb-4">Crea una ficha para organizar tu investigación y documentos.</p>
+            <h3 class="font-display font-bold text-lg text-slate-900 mb-1">${t('tasks.modalTitle')}</h3>
+            <p class="text-xs text-slate-500 mb-4">${t('tasks.modalSubtitle')}</p>
 
             <form id="new-task-form" class="space-y-3">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Título del Proyecto / Trabajo</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">${t('tasks.fieldTitle')}</label>
                 <input type="text" id="nt-title" placeholder="Ej. Ensayo sobre la Generación del 27" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Asignatura</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('tasks.fieldSubject')}</label>
                   <select id="nt-subject" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="Lengua y Literatura">Lengua y Literatura</option>
                     <option value="Ciencias y Tecnología">Ciencias y Tecnología</option>
@@ -182,19 +183,19 @@ export function renderTasksView(container: HTMLElement): void {
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Entrega</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('tasks.fieldDue')}</label>
                   <input type="date" id="nt-due" value="${new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0]}" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Descripción u objetivo</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">${t('tasks.fieldNotes')}</label>
                 <textarea id="nt-notes" rows="2" placeholder="Objetivo de aprendizaje del trabajo..." class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
               </div>
 
               <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
-                <button type="button" id="btn-cancel-nt" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
-                <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/20">Crear Trabajo</button>
+                <button type="button" id="btn-cancel-nt" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">${t('tasks.cancel')}</button>
+                <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/20">${t('tasks.create')}</button>
               </div>
             </form>
           </div>

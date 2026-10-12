@@ -1,5 +1,6 @@
 import { googleAuthService } from '../../services/google-auth';
 import { aiClientService } from '../../services/ai-client';
+import { i18n, t } from '../../services/i18n';
 import type { SupportedLanguage } from '../../types/ai';
 
 export interface NavbarCallbacks {
@@ -9,7 +10,7 @@ export interface NavbarCallbacks {
 }
 
 export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks): void {
-  const currentLang = (localStorage.getItem('anaxagoras_lang') as SupportedLanguage) || 'es';
+  const currentLang = i18n.getCurrentLanguage();
 
   container.innerHTML = `
     <header class="sticky top-0 z-40 w-full glass-panel border-b border-slate-200/80 shadow-sm transition-all duration-200">
@@ -24,21 +25,21 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="font-display font-bold text-xl tracking-tight text-slate-900">Anaxagoras <span class="text-brand-600">AI</span></span>
+              <span class="font-display font-bold text-xl tracking-tight text-slate-900">${t('app.title')}</span>
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-700 border border-brand-200">
-                STI Cognitivo
+                ${t('app.badge')}
               </span>
             </div>
-            <p class="text-xs text-slate-500 hidden sm:block">Aprende pensando, no copiando</p>
+            <p class="text-xs text-slate-500 hidden sm:block">${t('app.tagline')}</p>
           </div>
         </div>
 
         <!-- Global Action Controls -->
         <div class="flex items-center space-x-2 sm:space-x-3">
           
-          <!-- Language Selector -->
+          <!-- Standard i18n Language Selector -->
           <div class="relative">
-            <select id="lang-selector" class="text-xs font-medium bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-none rounded-xl py-1.5 px-2.5 cursor-pointer focus:ring-2 focus:ring-brand-500 focus:outline-none transition-colors">
+            <select id="lang-selector" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-none rounded-xl py-1.5 px-2.5 cursor-pointer focus:ring-2 focus:ring-brand-500 focus:outline-none transition-colors">
               <option value="es" ${currentLang === 'es' ? 'selected' : ''}>🇪🇸 Castellano</option>
               <option value="ca" ${currentLang === 'ca' ? 'selected' : ''}>Català</option>
               <option value="ga" ${currentLang === 'ga' ? 'selected' : ''}>Galego</option>
@@ -50,7 +51,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
           <!-- AI Model Status Pill -->
           <button id="btn-ai-settings" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-brand-50 hover:text-brand-700 border border-slate-200 transition-all text-slate-700 hover:border-brand-300">
             <span class="w-2 h-2 rounded-full bg-accent-emerald animate-soft-pulse"></span>
-            <span id="ai-model-label" class="hidden md:inline">Ollama (Local)</span>
+            <span id="ai-model-label" class="hidden md:inline">Ollama (${t('nav.local')})</span>
             <span class="text-[11px] text-slate-400">⚙️</span>
           </button>
 
@@ -61,11 +62,11 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
     </header>
   `;
 
-  // Language selector listener
+  // Language selector listener with i18n
   const langSelect = container.querySelector<HTMLSelectElement>('#lang-selector');
-  langSelect?.addEventListener('change', (e) => {
+  langSelect?.addEventListener('change', async (e) => {
     const lang = (e.target as HTMLSelectElement).value as SupportedLanguage;
-    localStorage.setItem('anaxagoras_lang', lang);
+    await i18n.changeLanguage(lang);
     callbacks.onLanguageChange(lang);
   });
 
@@ -85,7 +86,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
               <span class="block text-xs font-semibold text-slate-800 leading-none">${state.user.name}</span>
               <span class="text-[10px] text-slate-500 leading-none">${state.user.gradeLevel}</span>
             </div>
-            <span class="w-2 h-2 rounded-full bg-accent-emerald ml-1" title="Google Calendar & Drive sincronizados"></span>
+            <span class="w-2 h-2 rounded-full bg-accent-emerald ml-1" title="${t('nav.calendarDriveSync')}"></span>
           </button>
         `;
         authContainer.querySelector('#btn-user-profile')?.addEventListener('click', callbacks.onOpenAuth);
@@ -98,7 +99,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
             </svg>
-            <span class="hidden sm:inline">Conectar Google</span>
+            <span class="hidden sm:inline">${t('nav.connectGoogle')}</span>
           </button>
         `;
         authContainer.querySelector('#btn-connect-google')?.addEventListener('click', callbacks.onOpenAuth);
@@ -111,8 +112,8 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
     const label = container.querySelector('#ai-model-label');
     if (label) {
       label.textContent = settings.provider === 'local' 
-        ? `${settings.modelName} (Local)` 
-        : `${settings.modelName} (Cloud)`;
+        ? `${settings.modelName} (${t('nav.local')})` 
+        : `${settings.modelName} (${t('nav.cloud')})`;
     }
   });
 }

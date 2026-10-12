@@ -1,4 +1,5 @@
 import { aiClientService } from '../../services/ai-client';
+import { t } from '../../services/i18n';
 import type { ChatMessage, StudyTopic } from '../../types/study';
 
 const AVAILABLE_TOPICS: StudyTopic[] = [
@@ -57,13 +58,13 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
               💡
             </div>
             <div>
-              <h3 class="font-display font-bold text-base sm:text-lg">Marco de Aprendizaje Socrático Activo</h3>
-              <p class="text-xs text-white/90">La IA guía tu pensamiento con preguntas reflexivas. Prohibido obtener soluciones automáticas para garantizar tu crecimiento intelectual.</p>
+              <h3 class="font-display font-bold text-base sm:text-lg">${t('study.bannerTitle')}</h3>
+              <p class="text-xs text-white/90">${t('study.bannerDesc')}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 bg-black/15 backdrop-blur-md px-3.5 py-1.5 rounded-2xl text-xs font-semibold self-stretch md:self-auto justify-center">
             <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
-            <span>Tutor Cognitivo Activo</span>
+            <span>${t('study.bannerBadge')}</span>
           </div>
         </div>
 
@@ -97,13 +98,13 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
             <!-- Quick Socratic Prompts (Chips) -->
             <div id="quick-prompts-container" class="px-4 py-2 border-t border-slate-100 bg-slate-50/70 flex gap-2 overflow-x-auto text-xs">
               <button data-prompt="¿Me puedes hacer una pregunta para diagnosticar qué parte no entiendo?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                ❓ Hazme una pregunta diagnóstica
+                ${t('study.chip1')}
               </button>
               <button data-prompt="Dame una pista sin decirme la respuesta final" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                💡 Dame una pista reflexiva
+                ${t('study.chip2')}
               </button>
               <button data-prompt="Quiero intentar resolver el siguiente paso, ¿voy por buen camino?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                🎯 ¿Voy por buen camino?
+                ${t('study.chip3')}
               </button>
             </div>
 
@@ -113,7 +114,7 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
                 <input 
                   type="text" 
                   id="chat-input" 
-                  placeholder="Escribe tu razonamiento o duda... (Enter para enviar)" 
+                  placeholder="${t('study.inputPlaceholder')}" 
                   required
                   class="flex-1 text-sm px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                 />
@@ -122,13 +123,13 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
                   id="btn-send-message"
                   class="px-5 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5"
                 >
-                  <span>Enviar</span>
+                  <span>${t('study.send')}</span>
                   <span>➤</span>
                 </button>
               </form>
               <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-                <span>🔒 Modo seguro: la IA fomenta tu propio esfuerzo</span>
-                <span>Inferencia compatible OpenAI</span>
+                <span>${t('study.safeMode')}</span>
+                <span>${t('study.openaiCompatible')}</span>
               </div>
             </div>
 
@@ -140,13 +141,13 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
             <!-- Card 1: Desafío de Memoria Activa (Active Recall) -->
             <div class="glass-panel p-5 rounded-3xl border border-slate-200 space-y-4">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Repaso Activo</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('study.activeRecall')}</span>
                 <span class="text-base">⚡</span>
               </div>
 
               <div>
-                <h4 class="font-bold text-sm text-slate-900">Tarjeta de Autoevaluación</h4>
-                <p class="text-xs text-slate-500 mt-1">Explica con tus palabras antes de ver la explicación:</p>
+                <h4 class="font-bold text-sm text-slate-900">${t('study.flashcardTitle')}</h4>
+                <p class="text-xs text-slate-500 mt-1">${t('study.flashcardSubtitle')}</p>
               </div>
 
               <div id="flashcard-box" class="p-4 rounded-2xl bg-brand-50/40 border border-brand-100 space-y-3">
@@ -160,29 +161,29 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
                 </div>
 
                 <button id="btn-toggle-answer" class="w-full py-1.5 px-3 rounded-xl text-xs font-semibold bg-white border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors">
-                  👁️ Mostrar / Ocultar Pista Explicativa
+                  ${t('study.toggleHint')}
                 </button>
               </div>
 
               <div class="flex items-center justify-between gap-2 pt-1">
                 <button class="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors">
-                  🔁 Repasar luego
+                  ${t('study.reviewLater')}
                 </button>
                 <button class="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors">
-                  ✅ Dominado
+                  ${t('study.mastered')}
                 </button>
               </div>
             </div>
 
             <!-- Card 2: Conceptos Clave del Tema -->
             <div class="glass-panel p-5 rounded-3xl border border-slate-200 space-y-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Conceptos a Dominar</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('study.conceptsTitle')}</span>
               <ul class="space-y-2 text-xs">
                 ${selectedTopic.keyConcepts.map((concept, i) => `
                   <li class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                     <span class="font-medium text-slate-800">${concept}</span>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${i === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
-                      ${i === 0 ? 'Consolidado' : 'Por afianzar'}
+                      ${i === 0 ? t('study.consolidated') : t('study.toStrengthen')}
                     </span>
                   </li>
                 `).join('')}
@@ -271,7 +272,7 @@ Recuerda: aquí no te daré las respuestas masticadas, sino que exploraremos jun
           </div>
 
           <div class="flex items-center gap-2 text-[10px] text-slate-400 ${isTutor ? 'pl-1' : 'justify-end pr-1'}">
-            <span>${isTutor ? 'Tutor Socrático' : 'Tú'}</span>
+            <span>${isTutor ? t('study.tutorRole') : t('study.userRole')}</span>
             <span>•</span>
             <span>${msg.timestamp}</span>
           </div>

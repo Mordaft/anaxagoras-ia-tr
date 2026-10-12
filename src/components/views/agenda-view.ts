@@ -1,5 +1,6 @@
 import { db } from '../../services/storage';
 import { googleCalendarService } from '../../services/google-calendar';
+import { t } from '../../services/i18n';
 import type { StudyBlock, EventType } from '../../types/agenda';
 
 export function renderAgendaView(container: HTMLElement): void {
@@ -22,35 +23,35 @@ export function renderAgendaView(container: HTMLElement): void {
           <!-- Card 1: Próximos Exámenes -->
           <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Próximo Hito Lectivo</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.nextMilestone')}</span>
               <span class="text-xl">🎯</span>
             </div>
             <div class="mt-3">
-              <span class="text-2xl font-display font-extrabold text-slate-900">En 3 días</span>
+              <span class="text-2xl font-display font-extrabold text-slate-900">${t('agenda.inDays')}</span>
               <p class="text-xs text-slate-500 mt-1">Biología: La Célula y Fotosíntesis</p>
             </div>
             <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-brand-600">
-              <span>⚡ Sesión recomendada: 45 min hoy</span>
+              <span>${t('agenda.recommendedToday')}</span>
             </div>
           </div>
 
           <!-- Card 2: Horas de Estudio Planificadas -->
           <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Progreso Semanal</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.weeklyProgress')}</span>
               <span class="text-xl">⏱️</span>
             </div>
             <div class="mt-3">
               <div class="flex items-baseline gap-2">
                 <span class="text-2xl font-display font-extrabold text-slate-900">${completedBlocks} / ${totalBlocks}</span>
-                <span class="text-xs text-slate-500 font-medium">bloques completados</span>
+                <span class="text-xs text-slate-500 font-medium">${t('agenda.blocksCompleted')}</span>
               </div>
               <div class="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
                 <div class="bg-brand-500 h-2 rounded-full transition-all duration-500" style="width: ${totalBlocks ? (completedBlocks / totalBlocks) * 100 : 0}%"></div>
               </div>
             </div>
             <div class="mt-2 text-[11px] text-slate-500 flex justify-between">
-              <span>Metodología activa</span>
+              <span>${t('agenda.activeMethod')}</span>
               <span class="font-bold text-slate-700">${Math.round(totalBlocks ? (completedBlocks / totalBlocks) * 100 : 0)}%</span>
             </div>
           </div>
@@ -58,16 +59,16 @@ export function renderAgendaView(container: HTMLElement): void {
           <!-- Card 3: Google Calendar Sync -->
           <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Google Calendar</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.googleCalendar')}</span>
               <span class="text-xl">📅</span>
             </div>
             <div class="mt-3">
               <span class="text-2xl font-display font-extrabold text-slate-900">${syncedBlocks} / ${totalBlocks}</span>
-              <p class="text-xs text-slate-500 mt-1">Eventos sincronizados en tu cuenta</p>
+              <p class="text-xs text-slate-500 mt-1">${t('agenda.syncedEvents')}</p>
             </div>
             <div class="mt-3">
               <button id="btn-sync-calendar" class="w-full py-1.5 px-3 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors flex items-center justify-center gap-1.5">
-                <span>🔄 Sincronizar Todo con Calendar</span>
+                <span>${t('agenda.syncAll')}</span>
               </button>
             </div>
           </div>
@@ -78,16 +79,16 @@ export function renderAgendaView(container: HTMLElement): void {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div>
             <h2 class="text-xl font-display font-bold text-slate-900 flex items-center gap-2">
-              <span>Planificación Semanal de Estudio</span>
-              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-normal">Organización autónoma</span>
+              <span>${t('agenda.title')}</span>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-normal">${t('agenda.autonomousOrg')}</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Distribuye el esfuerzo en bloques cortos para garantizar la asimilación a largo plazo.</p>
+            <p class="text-xs text-slate-500 mt-0.5">${t('agenda.subtitle')}</p>
           </div>
 
           <div class="flex items-center gap-2.5">
             <button id="btn-new-block" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
               <span>＋</span>
-              <span>Añadir Bloque de Estudio</span>
+              <span>${t('agenda.addBlock')}</span>
             </button>
           </div>
         </div>
@@ -99,8 +100,8 @@ export function renderAgendaView(container: HTMLElement): void {
               ? `
               <div class="p-12 text-center glass-panel rounded-3xl">
                 <span class="text-4xl">📅</span>
-                <p class="mt-2 text-sm font-semibold text-slate-700">No hay bloques de estudio programados.</p>
-                <p class="text-xs text-slate-400">Pulsa en "Añadir Bloque de Estudio" para empezar a organizar tu tiempo.</p>
+                <p class="mt-2 text-sm font-semibold text-slate-700">${t('agenda.emptyTitle')}</p>
+                <p class="text-xs text-slate-400">${t('agenda.emptyDesc')}</p>
               </div>
             `
               : blocks
@@ -137,14 +138,14 @@ export function renderAgendaView(container: HTMLElement): void {
                       ${
                         block.syncedWithGoogle
                           ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                              <span>✓</span> Google Calendar
+                              <span>✓</span> ${t('agenda.synced')}
                             </span>`
                           : `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                              Pendiente sync
+                              ${t('agenda.pendingSync')}
                             </span>`
                       }
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">${block.notes || 'Sin observaciones adicionales'}</p>
+                    <p class="text-xs text-slate-500 mt-1">${block.notes || ''}</p>
                   </div>
                 </div>
 
@@ -152,7 +153,7 @@ export function renderAgendaView(container: HTMLElement): void {
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
                   <div class="text-left sm:text-right">
                     <span class="block text-xs font-bold text-slate-800">${block.date} • ${block.startTime}</span>
-                    <span class="text-[11px] text-slate-400">${block.durationMinutes} minutos recomendados</span>
+                    <span class="text-[11px] text-slate-400">${block.durationMinutes} ${t('agenda.minRecommended')}</span>
                   </div>
 
                   <button data-delete-id="${block.id}" class="btn-delete-block p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors" title="Eliminar">
@@ -170,18 +171,18 @@ export function renderAgendaView(container: HTMLElement): void {
         <!-- Add Block Modal Container -->
         <div id="new-block-modal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border border-slate-100">
-            <h3 class="font-display font-bold text-lg text-slate-900 mb-1">Añadir Bloque de Estudio</h3>
-            <p class="text-xs text-slate-500 mb-4">Planifica un hito para organizar tu tiempo de aprendizaje.</p>
+            <h3 class="font-display font-bold text-lg text-slate-900 mb-1">${t('agenda.modalTitle')}</h3>
+            <p class="text-xs text-slate-500 mb-4">${t('agenda.modalSubtitle')}</p>
 
             <form id="new-block-form" class="space-y-3">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Título de la actividad</label>
-                <input type="text" id="nb-title" placeholder="Ej. Repaso de vocabulario en Inglés" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldActivity')}</label>
+                <input type="text" id="nb-title" placeholder="Ej. Repaso de vocabulario" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Asignatura</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldSubject')}</label>
                   <select id="nb-subject" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
                     <option value="Matemáticas">Matemáticas</option>
                     <option value="Biología">Biología</option>
@@ -192,34 +193,34 @@ export function renderAgendaView(container: HTMLElement): void {
                   </select>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Hito</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldType')}</label>
                   <select id="nb-type" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="study_session">Sesión de estudio (45 min)</option>
-                    <option value="exam">Examen lectivo</option>
-                    <option value="assignment_due">Entrega de trabajo</option>
+                    <option value="study_session">${t('agenda.types.study_session')}</option>
+                    <option value="exam">${t('agenda.types.exam')}</option>
+                    <option value="assignment_due">${t('agenda.types.assignment_due')}</option>
                   </select>
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Fecha</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldDate')}</label>
                   <input type="date" id="nb-date" value="${new Date().toISOString().split('T')[0]}" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-700 mb-1">Hora Inicio</label>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldTime')}</label>
                   <input type="time" id="nb-time" value="17:00" required class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Notas u objetivo personal</label>
-                <input type="text" id="nb-notes" placeholder="Ej. Resolver 3 ejercicios sin mirar la solución" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldNotes')}</label>
+                <input type="text" id="nb-notes" placeholder="Ej. Resolver 3 ejercicios de examen" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
 
               <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
-                <button type="button" id="btn-cancel-nb" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
-                <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/20">Guardar Bloque</button>
+                <button type="button" id="btn-cancel-nb" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">${t('agenda.cancel')}</button>
+                <button type="submit" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/20">${t('agenda.save')}</button>
               </div>
             </form>
           </div>
@@ -250,7 +251,7 @@ export function renderAgendaView(container: HTMLElement): void {
     // Calendar sync button
     const syncBtn = container.querySelector('#btn-sync-calendar');
     syncBtn?.addEventListener('click', async () => {
-      if (syncBtn) syncBtn.innerHTML = `<span>⏳ Sincronizando...</span>`;
+      if (syncBtn) syncBtn.innerHTML = `<span>${t('agenda.syncing')}</span>`;
       try {
         await googleCalendarService.syncAllPendingBlocks();
         await loadData();

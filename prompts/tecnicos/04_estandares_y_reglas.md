@@ -4,30 +4,27 @@ Pautas de calidad técnica que la IA debe verificar en cada generación de códi
 
 ---
 
-## 1. Semántica y Estructura HTML
-- Uso de etiquetas semánticas obligatorias: `<header>`, `<nav>`, `<main>`, `<section>`, `<article>`, `<footer>`.
-- Jerarquía estricta de encabezados: solo **un único `<h1>` por página**, seguido ordenadamente por `<h2>`, `<h3>`.
-- Atributos `alt` obligatorios y descriptivos en todas las imágenes.
-- Identificadores únicos (`id="..."`) y descriptivos en elementos interactivos para testing y accesibilidad.
+## 1. Estándar de Internacionalización (i18n)
+- **Cero texto hardcoded:** Toda cadena mostrada al usuario en vistas, botones, mensajes de error o modales debe obtenerse mediante `t('modulo.clave')` de `src/services/i18n.ts`.
+- **Estructura semántica de claves:** Organizar las claves por componentes (ej. `nav.*`, `tabs.*`, `agenda.*`, `study.*`, `tasks.*`, `aiModal.*`, `authModal.*`, `pwa.*`).
+- **Completitud multilingüe:** Mantener actualizados sincronizadamente los 5 diccionarios oficiales: Castellano (`es`), Catalán (`ca`), Gallego (`ga`), Euskera (`eu`) y Valenciano (`val`).
 
 ---
 
-## 2. SEO Técnico y Metadatos
-- Etiqueta `<title>` descriptiva y atractiva.
-- `<meta name="description" content="...">` precisa y persuasiva.
-- Metaetiquetas Open Graph básicas (`og:title`, `og:description`, `og:image`).
-- `viewport` configurado para dispositivos móviles: `width=device-width, initial-scale=1.0`.
+## 2. Progressive Web App (PWA) y Ciclo de Vida
+- **Instalabilidad:** Cumplir los criterios de PWA de Google Lighthouse (manifest válido, iconos 192/512px, start_url, display: standalone).
+- **Gestión de Actualizaciones:** Cuando se despliegue una nueva versión, el Service Worker detectará la actualización y mostrará un toast interactivo *"Nueva versión disponible [Actualizar]"* sin interrumpir de forma agresiva la actividad en curso.
+- **Rutas Relativas:** Todos los enlaces y assets deben ser relativos para permitir que la app funcione sin cambios tanto en subrutas de GitHub Pages (`/anaxagoras-ia-tr/`) como en dominios raíz.
 
 ---
 
-## 3. Accesibilidad (a11y)
-- Contraste de color mínimo WCAG AA (mínimo 4.5:1 para texto normal).
-- Atributos `aria-label` en botones con solo icono.
-- Navegación por teclado usable (`:focus-visible` con anillo visible).
+## 3. Despliegue en GitHub Pages
+- Flujo totalmente declarativo en `.github/workflows/deploy.yml`.
+- El build estático generado en `dist/` debe ser autocontenido y no depender de rutas absolutas `/assets/...`.
 
 ---
 
-## 4. Convenciones de Código
-- **CSS:** Clases legibles con metodología BEM o utilidades semánticas (`.hero__title`, `.nav-link`, etc.).
-- **JavaScript:** Sintaxis moderna ES6+ (`const`/`let`, arrow functions, `async`/`await`), modular y sin variables globales innecesarias.
-- **Rendimiento:** Carga asíncrona/defer de scripts no críticos, optimización de fuentes y formatos de imagen modernos.
+## 4. Semántica, Accesibilidad (a11y) y Calidad
+- Jerarquía semántica estricta (`<header>`, `<nav>`, `<main>`, `<section>`).
+- Contraste de colores compatible con WCAG AA.
+- Manejo estricto de tipos TypeScript sin uso de `any` injustificado.

@@ -9,7 +9,8 @@
     "preview": "vite preview --port 8086"
   },
   "dependencies": {
-    "dexie": "^4.0.11"
+    "dexie": "^4.0.11",
+    "i18next": "^26.4.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
