@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1.0.2';
+const CACHE_VERSION = 'v1.1.0';
 const CACHE_NAME = `anaxagoras-ai-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
@@ -10,8 +10,10 @@ const PRECACHE_ASSETS = [
   './favicon-32x32.png'
 ];
 
-// Install: Pre-cache static core
+// Install: Pre-cache static core and activate immediately
 self.addEventListener('install', (event) => {
+  console.log('[SW] Instalando nueva versión:', CACHE_NAME);
+  self.skipWaiting(); // No esperar a que se cierren las pestañas activas
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS).catch((err) => {
@@ -21,14 +23,15 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: Cleanup old version caches
+// Activate: Purge old version caches and take immediate control of clients
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activando nueva versión:', CACHE_NAME);
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME && key.startsWith('anaxagoras-ai-')) {
-            console.log('[SW] Eliminando caché antigua:', key);
+            console.log('[SW] Purgando caché obsoleta:', key);
             return caches.delete(key);
           }
         })
@@ -46,26 +49,53 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('/v1/') || 
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('openai.com') ||
+    url.hostname.includes('educacio.gencat.cat') ||
     event.request.method !== 'GET'
   ) {
     return;
   }
 
-  // Stale-while-revalidate for local assets
+  // 1. Navigation / HTML Requests: Network-First with Cache Fallback
+  // Esto garantiza que los usuarios online reciban SIEMPRE la última versión desplegada de index.html
+  const isNavigation = 
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/');
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Si no hay red, servir desde caché offline
+          return caches.match(event.request).then((cached) => cached || caches.match('./index.html'));
+        })
+    );
+    return;
+  }
+
+  // 2. Static Assets (JS, CSS, Images, Icons, Fonts): Stale-While-Revalidate
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Offline fallback if network fails
-        return cachedResponse;
-      });
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
 
       return cachedResponse || fetchPromise;
     })
@@ -74,7 +104,7 @@ self.addEventListener('fetch', (event) => {
 
 // Message listener for skipWaiting / manual version refresh
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data.type === 'FORCE_REFRESH')) {
     self.skipWaiting();
   }
 });

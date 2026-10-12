@@ -1,4 +1,5 @@
 import { googleAuthService } from '../../services/google-auth';
+import { pwaService } from '../../services/pwa-service';
 import { t } from '../../services/i18n';
 
 export interface AuthModalCallbacks {
@@ -125,6 +126,26 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
                 </div>
               </div>
 
+              <!-- PWA Version and Update Management -->
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-base">📱</span>
+                  <div>
+                    <span class="block text-xs font-bold text-slate-800">Actualizaciones de la Aplicación</span>
+                    <span class="text-[10px] text-slate-500">PWA instalable • Caché Network-First</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="btn-manual-check-update" class="px-3 py-1.5 rounded-xl text-[11px] font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <span>🔄</span>
+                    <span>Buscar actualización</span>
+                  </button>
+                  <button id="btn-force-hard-reset" class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors" title="Limpiar caché local y forzar descarga limpia">
+                    🧹 Limpiar
+                  </button>
+                </div>
+              </div>
+
               <!-- Switch or Disconnect Actions -->
               <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
                 ${
@@ -227,6 +248,17 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
     googleAuthService.setGradeProfile('2batx');
     callbacks.onStateChanged();
     renderAuthModal(container, callbacks);
+  });
+
+  // PWA manual update check & hard reset
+  container.querySelector('#btn-manual-check-update')?.addEventListener('click', async () => {
+    await pwaService.checkForUpdates(true);
+  });
+
+  container.querySelector('#btn-force-hard-reset')?.addEventListener('click', async () => {
+    if (confirm('¿Deseas limpiar la caché del navegador y recargar la última versión desde el servidor? Tus datos de estudio se mantendrán seguros.')) {
+      await pwaService.forceHardReset();
+    }
   });
 
   // Switch to demo mode
