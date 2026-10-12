@@ -4,49 +4,45 @@ Requisitos funcionales centrados en la autonomía del estudiante, crecimiento co
 
 ---
 
-## 1. Módulos y Funcionalidades Requeridas (Iteración 01)
+## 1. Módulos y Funcionalidades Requeridas (Iteración 03)
 
 | Módulo / Componente | Descripción funcional | Prioridad |
 | :--- | :--- | :---: |
-| **Autenticación Google OAuth 2.0** | Conexión segura con la cuenta de Google del usuario para obtener identidad y permisos de Calendar y Drive. | P1 |
-| **Configurador de Inferencia IA** | Selector de backend: Modelo Local (Ollama / vLLM / OpenAI standard endpoint) o Cloud (OpenAI / compatible), test de conexión y selección de modelo. | P1 |
+| **Google Connectors (Real & Demo)** | Doble modalidad: **Modo Demo** (entorno precargado inmediato para evaluación) y **Conector Real Google** con Google Identity Services (GIS), Client ID configurable y tokens OAuth 2.0. | P1 |
+| **Google Calendar Real API** | Sincronización real vía REST API (`/calendar/v3/calendars/primary/events`) para crear bloques de estudio en el calendario personal del alumno y leer eventos lectivos. | P1 |
+| **Google Drive Real API** | Consulta real vía REST API (`/drive/v3/files`) para listar documentos de trabajo (Google Docs, Sheets, Slides, PDFs) con enlaces directos para visualización y trabajo autónomo. | P1 |
+| **Configurador de Inferencia IA** | Selector de backend: Modelo Local (Ollama / vLLM / OpenAI standard endpoint) o Cloud (OpenAI / compatible), test de conexión y ajuste socrático. | P1 |
 | **Módulo Agenda** | Visualización de eventos, fechas de exámenes y planificación de bloques de estudio con sincronización a Google Calendar. | P1 |
 | **Módulo Estudio / Repaso** | Interfaz socrática con IA: plantea pistas y preguntas reflexivas, flashcards de active recall y comprobación de comprensión sin dar respuestas directas. | P1 |
 | **Módulo Trabajos** | Gestor de proyectos escolares: desglose en hitos, checklist de autonomía, vinculación de archivos desde Google Drive y revisión crítica de contenidos. | P1 |
-| **Persistencia Local (Dexie.js / IndexedDB)** | Almacenamiento seguro en el navegador para sesiones, notas, tareas locales y configuraciones sin comprometer credenciales. | P1 |
-| **Selector Multi-idioma** | Alternancia fluida entre Castellano, Catalán, Gallego, Euskera y Valenciano. | P2 |
+| **Internacionalización Completa (i18n)** | Soporte dinámico en Castellano, Català, Galego, Euskera y Valencià con `i18next`. | P1 |
+| **Soporte PWA & Offline** | Web App Manifest, Service Worker versionado y notificación de actualización. | P1 |
 
 ---
 
 ## 2. Historias de Usuario Clave
 
-### HU-01: Control Ético y Pedagógico de la IA
-- **Como** educador o padre,
-- **Quiero** que el tutor de IA nunca dé la respuesta masticada al estudiante cuando este le pregunte dudas de deberes o exámenes,
-- **Para** asegurar que el alumno desarrolle pensamiento crítico, autonomía y aprendizaje significativo.
+### HU-01: Acceso a Cuenta Google Real y Modo Demo
+- **Como** evaluador o estudiante,
+- **Quiero** poder probar la plataforma inmediatamente en "Modo Demo" o vincular mi cuenta real de Google mediante OAuth 2.0 y mi Client ID,
+- **Para** experimentar el flujo completo sin barreras o trabajar con mis calendarios y documentos reales de clase.
 - **Criterios de Aceptación:**
-  - El sistema detecta peticiones directas (ej. *"dame la solución al problema 4"*) y responde guiando con pistas socráticas o preguntas intermedias.
+  - Selector visible en el modal de cuenta: "Modo Demo Activo" vs. "Conectar Cuenta Google Real".
+  - En modo real, se inicializa el cliente GIS (`google.accounts.oauth2.initTokenClient`), se obtiene el `access_token` y se recuperan el perfil, eventos de Google Calendar y ficheros de Google Drive reales.
+  - En modo demo, se simula con datos realistas garantizando 100% de interactividad sin requerir credenciales externas.
 
-### HU-02: Gestión del Tiempo en la Agenda
-- **Como** estudiante de secundaria o bachillerato,
-- **Quiero** programar mis sesiones de estudio en base a la proximidad de mis exámenes y exportarlas a mi Google Calendar,
-- **Para** distribuir mi tiempo sin agobios y no dejar todo para el último día.
+### HU-02: Creación Real de Eventos en Google Calendar
+- **Como** estudiante de secundaria,
+- **Quiero** que al pulsar "Sincronizar Todo con Calendar" los bloques se creen como eventos en mi Google Calendar real,
+- **Para** recibir recordatorios en mi teléfono móvil y reloj inteligente antes de cada sesión de estudio.
 - **Criterios de Aceptación:**
-  - Puede crear un bloque de estudio con asignatura, objetivo y duración (ej. 45 min).
-  - Puede sincronizar el bloque con su cuenta de Google conectada.
+  - Llamada HTTP `POST https://www.googleapis.com/calendar/v3/calendars/primary/events` con el resumen, descripción y horas de inicio y fin.
+  - Confirmación visual de sincronización exitosa en la tarjeta del bloque.
 
-### HU-03: Desarrollo Guiado de Trabajos Escolares
-- **Como** estudiante,
-- **Quiero** estructurar mi trabajo por fases y enlazar mis documentos de Google Drive,
-- **Para** avanzar de forma ordenada y recibir feedback sobre la coherencia y fuentes sin que la IA escriba el trabajo por mí.
+### HU-03: Vinculación de Archivos Reales de Google Drive en Trabajos
+- **Como** estudiante que elabora una monografía,
+- **Quiero** explorar y adjuntar mis documentos reales de Google Docs de Drive,
+- **Para** organizar mis fuentes y acceder a ellos directamente desde el asistente de tareas.
 - **Criterios de Aceptación:**
-  - El trabajo se divide en: Planificación, Investigación, Redacción propia y Revisión.
-  - El alumno puede adjuntar el enlace o ID de su archivo de Google Drive.
-
-### HU-04: Flexibilidad de Modelos de IA (Local y Cloud)
-- **Como** usuario preocupado por la privacidad de los menores,
-- **Quiero** poder conectar un modelo local (ej. Ollama con Llama 3 o Gemma) o usar mi propia clave de inferencia OpenAI,
-- **Para** tener soberanía sobre mis datos sin depender de servicios de terceros cerrados.
-- **Criterios de Aceptación:**
-  - Modal accesible con campos: URL del Endpoint (default `http://localhost:11434/v1`), API Key (opcional para local), y Nombre del Modelo.
-  - Indicador de estado de conexión (conectado/desconectado).
+  - Llamada HTTP `GET https://www.googleapis.com/drive/v3/files` para obtener archivos del usuario.
+  - Los archivos adjuntos muestran título real, tipo de archivo y enlace directo para abrirlos.

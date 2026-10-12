@@ -86,7 +86,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
               <span class="block text-xs font-semibold text-slate-800 leading-none">${state.user.name}</span>
               <span class="text-[10px] text-slate-500 leading-none">${state.user.gradeLevel}</span>
             </div>
-            <span class="w-2 h-2 rounded-full bg-accent-emerald ml-1" title="${t('nav.calendarDriveSync')}"></span>
+            <span class="w-2 h-2 rounded-full ${state.mode === 'real' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'} ml-1" title="${state.mode === 'real' ? 'Cuenta Google Real' : 'Modo Demo Activo'}"></span>
           </button>
         `;
         authContainer.querySelector('#btn-user-profile')?.addEventListener('click', callbacks.onOpenAuth);

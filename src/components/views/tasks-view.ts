@@ -102,11 +102,13 @@ export function renderTasksView(container: HTMLElement): void {
                             <div class="flex items-center gap-2 overflow-hidden">
                               <span class="text-base flex-shrink-0">${getFileIcon(file.mimeType)}</span>
                               <div class="truncate">
-                                <span class="font-semibold text-slate-800 block truncate">${file.name}</span>
+                                <a href="${file.webViewLink || '#'}" target="_blank" rel="noopener noreferrer" class="font-semibold text-slate-800 hover:text-brand-600 block truncate transition-colors">${file.name}</a>
                                 <span class="text-[10px] text-slate-400 font-mono">${file.lastModified || 'Sincronizado'}</span>
                               </div>
                             </div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">${t('tasks.driveSync')}</span>
+                            <a href="${file.webViewLink || '#'}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors">
+                              ${t('tasks.driveSync')} ↗
+                            </a>
                           </div>
                         `
                               )
