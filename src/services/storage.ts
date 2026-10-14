@@ -61,7 +61,7 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
   const inThreeDays = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
   const inFourDays = new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0];
 
-  if (existing1eso === 0) {
+    if (existing1eso === 0) {
     await db.studyBlocks.bulkAdd([
       {
         title: 'Análisis de Oraciones: Sujeto y Complemento Verbal',
@@ -72,6 +72,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'assignment_due',
         completed: false,
         gradeKey: '1eso',
+        origin: 'institutional',
+        teacherNotes: 'Publicado desde Esfer@ tras completar la explicación del Sujeto y Predicado en clase.',
         notes: 'Identificación del predicado y localización del Complemento Verbal (CV) en bloque.',
         syncedWithGoogle: true,
         googleEventId: 'gcal_eso_castellano'
@@ -85,6 +87,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '1eso',
+        origin: 'institutional',
+        teacherNotes: 'El profesor ha cerrado el tema 2 de ecosistemas. Repaso activo recomendado.',
         notes: 'Repaso con esquemas visuales de vertebrados e invertebrados.',
         syncedWithGoogle: false
       },
@@ -97,6 +101,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '1eso',
+        origin: 'institutional',
+        teacherNotes: 'Avance del tema de fracciones en el aula. Resolver ejercicios de cálculo.',
         notes: 'Ejercicios de suma y resta con común denominador.',
         syncedWithGoogle: true,
         googleEventId: 'gcal_eso_mates'
@@ -110,6 +116,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'exam',
         completed: false,
         gradeKey: '1eso',
+        origin: 'institutional',
+        teacherNotes: 'Control trimestral de departamento programado por el centro educativo.',
         notes: 'Llevar mapa histórico de Mesopotamia y el Nilo.',
         syncedWithGoogle: false
       },
@@ -122,6 +130,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '1eso',
+        origin: 'institutional',
+        teacherNotes: 'Actividad de fomento lector coordinada por el equipo docente de 1º de ESO.',
         notes: 'Lectura de 2 capítulos y ficha de comprensión lectora.',
         syncedWithGoogle: false
       }
@@ -139,6 +149,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'assignment_due',
         completed: false,
         gradeKey: '2batx',
+        origin: 'institutional',
+        teacherNotes: 'Publicado desde Esfer@ por el Departamento de Lengua Castellana (Preparación PAU).',
         notes: 'Clasificación de complementos verbales (CPred vs CCL) y pruebas sintácticas formales.',
         syncedWithGoogle: true,
         googleEventId: 'gcal_batx_castellano'
@@ -152,6 +164,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '2batx',
+        origin: 'institutional',
+        teacherNotes: 'El profesor ha impartido el tema en el aula hoy. Comentario de texto obligatorio.',
         notes: 'Comentario de texto histórico: Manifiesto de los Persas y Cortes de Cádiz.',
         syncedWithGoogle: false
       },
@@ -164,6 +178,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '2batx',
+        origin: 'institutional',
+        teacherNotes: 'Práctica de selectividad asignada en clase para consolidar cálculo matricial.',
         notes: 'Resolución de problemas de selectividad con discusión según parámetro k.',
         syncedWithGoogle: true,
         googleEventId: 'gcal_batx_mates'
@@ -177,6 +193,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'exam',
         completed: false,
         gradeKey: '2batx',
+        origin: 'institutional',
+        teacherNotes: 'Prueba oficial de simulacro de Selectividad coordinada por el departamento.',
         notes: 'Comparativa ontológica y epistemológica entre Platón y Descartes.',
         syncedWithGoogle: false
       },
@@ -189,6 +207,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         type: 'study_session',
         completed: false,
         gradeKey: '2batx',
+        origin: 'institutional',
+        teacherNotes: 'Contenido teórico completado en el laboratorio escolar. Resolver ejercicios del boletín.',
         notes: 'Cálculo de entalpía estándar y entropía de reacción.',
         syncedWithGoogle: false
       }

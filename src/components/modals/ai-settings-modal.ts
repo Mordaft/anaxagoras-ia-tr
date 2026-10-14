@@ -152,15 +152,15 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
     testBtn?.addEventListener('click', async () => {
       const endpoint = (container.querySelector('#input-endpoint') as HTMLInputElement).value;
       const model = (container.querySelector('#input-model') as HTMLInputElement).value;
-      const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value;
+      const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value.trim();
       const providerRadio = container.querySelector('input[name="provider"]:checked') as HTMLInputElement;
 
       if (testBtn) testBtn.innerHTML = `<span>⏳</span><span>${t('aiModal.testing')}</span>`;
 
       const result = await aiClientService.testConnection({
         provider: providerRadio?.value as any || 'local',
-        endpointUrl: endpoint,
-        modelName: model,
+        endpointUrl: endpoint.trim(),
+        modelName: model.trim(),
         apiKey,
         temperature: 0.7,
         socraticStrictness: 'high',
@@ -185,9 +185,9 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
     const form = container.querySelector('#ai-settings-form');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const endpoint = (container.querySelector('#input-endpoint') as HTMLInputElement).value;
-      const model = (container.querySelector('#input-model') as HTMLInputElement).value;
-      const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value;
+      const endpoint = (container.querySelector('#input-endpoint') as HTMLInputElement).value.trim();
+      const model = (container.querySelector('#input-model') as HTMLInputElement).value.trim();
+      const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value.trim();
       const providerRadio = container.querySelector('input[name="provider"]:checked') as HTMLInputElement;
       const strictness = (container.querySelector('#select-strictness') as HTMLSelectElement).value;
 

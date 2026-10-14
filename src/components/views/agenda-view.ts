@@ -4,10 +4,13 @@ import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
 import { educationalApiService } from '../../services/educational-api';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
+import { renderPlanificationModal } from '../modals/planification-modal';
 import { t } from '../../services/i18n';
 import type { StudyBlock, EventType } from '../../types/agenda';
 
 export function renderAgendaView(container: HTMLElement): void {
+  let activeInstitutionalAlert: { message: string; title: string; subject: string } | null = null;
+
   async function loadData() {
     await ensureGradeSpecificAgendaBlocks();
     const allBlocks = await db.studyBlocks.toArray();
@@ -23,66 +26,106 @@ export function renderAgendaView(container: HTMLElement): void {
     const currentUser = auth.user;
     const currentGrade = currentUser?.gradeKey || '1eso';
     const totalBlocks = blocks.length;
-    const completedBlocks = blocks.filter(b => b.completed).length;
     const syncedBlocks = blocks.filter(b => b.syncedWithGoogle).length;
 
-    // Detect next exam or milestone dynamically
-    const nextExam = blocks.find(b => b.type === 'exam') || blocks[0];
-    const examTitle = nextExam ? `${nextExam.subject}: ${nextExam.title}` : 'Sin exámenes programados';
+    // Métricas diagnósticas avanzadas
+    const stats = aiClientService.calculateAgendaStats(blocks);
+    const topUrgent = stats.urgentPriorities[0];
+
+    const gradeSubjects = currentGrade === '2batx'
+      ? ['Lengua Castellana', 'Historia de España', 'Matemáticas II', 'Filosofía', 'Química', 'Inglés']
+      : ['Lengua Castellana', 'Matemáticas', 'Ciencias Naturales', 'Ciencias Sociales', 'Inglés'];
 
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        <!-- Top Banner / Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Top Banner / Summary Cards: Los 4 pilares de avance y tiempo -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          <!-- Card 1: Próximos Exámenes -->
-          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
+          <!-- Card 1: Próximos Exámenes e Hitos Urgentes -->
+          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden flex flex-col justify-between">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.nextMilestone')}</span>
-              <span class="text-xl">🎯</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">🎯 Prioridad Urgente</span>
+              <span class="text-xl">⚡</span>
             </div>
             <div class="mt-3">
-              <span class="text-2xl font-display font-extrabold text-slate-900">${t('agenda.inDays')}</span>
-              <p class="text-xs text-slate-600 mt-1 font-medium truncate" title="${examTitle}">${examTitle}</p>
+              ${
+                topUrgent
+                  ? `
+                  <span class="text-2xl font-display font-extrabold text-slate-900 block truncate" title="${topUrgent.title}">
+                    ${topUrgent.subject}
+                  </span>
+                  <p class="text-xs text-amber-800 font-semibold mt-1">
+                    ${topUrgent.type === 'exam' ? '📝 Examen' : '📦 Entrega'} • ${topUrgent.daysLeft === 0 ? '¡Hoy mismo!' : topUrgent.daysLeft === 1 ? 'Mañana' : `En ${topUrgent.daysLeft} días`}
+                  </p>
+                `
+                  : `
+                  <span class="text-xl font-display font-extrabold text-emerald-700">Sin urgencias</span>
+                  <p class="text-xs text-slate-500 mt-1">Ritmo constante y espaciado</p>
+                `
+              }
             </div>
-            <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-brand-600">
-              <span>${t('agenda.recommendedToday')}</span>
+            <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-brand-600 border-t border-slate-100 pt-2">
+              <span>${topUrgent ? topUrgent.title : 'Organización autónoma al día'}</span>
             </div>
           </div>
 
-          <!-- Card 2: Horas de Estudio Planificadas -->
-          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
+          <!-- Card 2: Distribución de la Tarde (Post-Clases) -->
+          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden flex flex-col justify-between">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.weeklyProgress')}</span>
-              <span class="text-xl">⏱️</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">⏱️ Tu Tarde (Hoy)</span>
+              <span class="text-xl">🏖️</span>
+            </div>
+            <div class="mt-3">
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-display font-extrabold text-slate-900">${stats.afternoonDistribution.freeTimeHours} h</span>
+                <span class="text-xs text-brand-700 font-bold">tiempo libre</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">
+                Salida a las 15:00 • <strong>${stats.afternoonDistribution.todayStudyMinutes} min</strong> estudio hoy
+              </p>
+            </div>
+            <div class="mt-3 text-[11px] text-slate-500 flex justify-between border-t border-slate-100 pt-2">
+              <span class="text-emerald-700 font-semibold">✓ Descanso protegido</span>
+              <span class="text-slate-400">Sin saturación</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Avance de Deberes y Entregas -->
+          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">📝 Avance de Deberes</span>
+              <span class="text-xl">📋</span>
             </div>
             <div class="mt-3">
               <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-display font-extrabold text-slate-900">${completedBlocks} / ${totalBlocks}</span>
-                <span class="text-xs text-slate-500 font-medium">${t('agenda.blocksCompleted')}</span>
+                <span class="text-2xl font-display font-extrabold text-slate-900">${stats.homeworkProgress.completed} / ${stats.homeworkProgress.total}</span>
+                <span class="text-xs text-slate-500 font-medium">entregas listas</span>
               </div>
               <div class="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
-                <div class="bg-brand-500 h-2 rounded-full transition-all duration-500" style="width: ${totalBlocks ? (completedBlocks / totalBlocks) * 100 : 0}%"></div>
+                <div class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: ${stats.homeworkProgress.percentage}%"></div>
               </div>
             </div>
-            <div class="mt-2 text-[11px] text-slate-500 flex justify-between">
-              <span>${t('agenda.activeMethod')}</span>
-              <span class="font-bold text-slate-700">${Math.round(totalBlocks ? (completedBlocks / totalBlocks) * 100 : 0)}%</span>
+            <div class="mt-2 text-[11px] text-slate-500 flex justify-between border-t border-slate-100 pt-2">
+              <span>Tasa de entrega</span>
+              <span class="font-bold text-slate-700">${stats.homeworkProgress.percentage}%</span>
             </div>
           </div>
 
-          <!-- Card 3: Google Calendar Sync -->
-          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden">
+          <!-- Card 4: Sincronización Google Calendar & Privacidad Local -->
+          <div class="glass-panel p-5 rounded-3xl glow-card relative overflow-hidden flex flex-col justify-between">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('agenda.googleCalendar')}</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">🔒 IndexedDB & Calendar</span>
               <span class="text-xl">📅</span>
             </div>
             <div class="mt-3">
-              <span class="text-2xl font-display font-extrabold text-slate-900">${syncedBlocks} / ${totalBlocks}</span>
-              <p class="text-xs text-slate-500 mt-1">${t('agenda.syncedEvents')}</p>
+              <div class="flex items-center gap-1.5">
+                <span class="text-2xl font-display font-extrabold text-slate-900">${syncedBlocks} / ${totalBlocks}</span>
+                <span class="text-xs text-slate-500">sincronizados</span>
+              </div>
+              <p class="text-[11px] text-emerald-700 font-semibold mt-1">100% guardado en tu navegador</p>
             </div>
-            <div class="mt-3">
+            <div class="mt-3 border-t border-slate-100 pt-2">
               <button id="btn-sync-calendar" class="w-full py-1.5 px-3 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors flex items-center justify-center gap-1.5">
                 <span>${t('agenda.syncAll')}</span>
               </button>
@@ -90,6 +133,39 @@ export function renderAgendaView(container: HTMLElement): void {
           </div>
 
         </div>
+
+        <!-- Barra Visual de Balance de Repaso por Asignatura -->
+        ${
+          stats.subjectBreakdown.length > 0
+            ? `
+            <div class="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-base">📊</span>
+                <span class="font-bold text-slate-800 uppercase tracking-wider text-[11px]">Dedicación por Asignatura:</span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap flex-1 sm:justify-end">
+                ${stats.subjectBreakdown
+                  .map(
+                    (s, i) => `
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold border ${
+                    i === 0
+                      ? 'bg-brand-50 text-brand-700 border-brand-200'
+                      : i === 1
+                      ? 'bg-purple-50 text-purple-700 border-purple-200'
+                      : 'bg-slate-100 text-slate-700 border-slate-200'
+                  }">
+                    <span>${s.subject}:</span>
+                    <strong class="font-bold">${s.minutes} min</strong>
+                    <span class="text-[10px] text-slate-400">(${s.percentage}%)</span>
+                  </span>
+                `
+                  )
+                  .join('')}
+              </div>
+            </div>
+          `
+            : ''
+        }
 
         <!-- Section Header & Filter / Add Block -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
@@ -124,6 +200,48 @@ export function renderAgendaView(container: HTMLElement): void {
             </button>
           </div>
         </div>
+
+        <!-- Alerta colaborativa de avance comunicada por el centro educativo -->
+        ${
+          activeInstitutionalAlert
+            ? `
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 p-5 text-white shadow-xl border border-purple-500/30 animate-fadeIn">
+              <div class="absolute -right-6 -bottom-6 w-36 h-36 bg-purple-500/15 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="flex items-start justify-between gap-4 relative z-10">
+                <div class="flex items-start gap-3.5">
+                  <div class="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-xl flex-shrink-0 shadow-inner">
+                    🏛️
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-xs uppercase tracking-wider font-extrabold text-purple-300">
+                        Novedad Colaborativa Escolar • ${activeInstitutionalAlert.subject}
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                        Avance Curricular Docente
+                      </span>
+                    </div>
+                    <p class="text-sm font-semibold text-white mt-1">
+                      ${activeInstitutionalAlert.message}
+                    </p>
+                    <div class="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 text-xs text-purple-100">
+                      <span>📌 Agendada nueva tarea en tu agenda escolar:</span>
+                      <strong class="font-bold text-white">${activeInstitutionalAlert.title}</strong>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  id="btn-dismiss-inst-alert" 
+                  class="p-1.5 text-purple-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors flex-shrink-0 text-sm font-bold"
+                  title="Cerrar notificación"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          `
+            : ''
+        }
 
         <!-- Schedule Items List -->
         <div class="space-y-3" id="blocks-list">
@@ -168,6 +286,15 @@ export function renderAgendaView(container: HTMLElement): void {
                         ${block.subject}
                       </span>
                       ${
+                        block.origin === 'student'
+                          ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md" title="Tarea planificada autónomamente por el alumno">
+                              <span>👤</span> Personal
+                            </span>`
+                          : `<span class="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md" title="Comunicado por el centro educativo (Esfer@ / Departament d'Educació)">
+                              <span>🏛️</span> Entidad Educativa
+                            </span>`
+                      }
+                      ${
                         block.syncedWithGoogle
                           ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
                               <span>✓</span> ${t('agenda.synced')}
@@ -178,15 +305,34 @@ export function renderAgendaView(container: HTMLElement): void {
                       }
                     </div>
                     <p class="text-xs text-slate-500 mt-1">${block.notes || ''}</p>
+                    ${
+                      block.teacherNotes
+                        ? `
+                        <div class="mt-1.5 p-2 rounded-xl bg-purple-50/70 border border-purple-200/60 flex items-start gap-1.5 text-[11px] text-purple-900">
+                          <span class="text-xs flex-shrink-0">📢</span>
+                          <span><strong>Profesor:</strong> ${block.teacherNotes}</span>
+                        </div>
+                      `
+                        : ''
+                    }
                   </div>
                 </div>
 
                 <!-- Right Timing & Actions -->
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
-                  <div class="text-left sm:text-right">
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+                  <div class="text-left sm:text-right pr-1">
                     <span class="block text-xs font-bold text-slate-800">${block.date} • ${block.startTime}</span>
                     <span class="text-[11px] text-slate-400">${block.durationMinutes} ${t('agenda.minRecommended')}</span>
                   </div>
+
+                  <!-- Acción directa: Posponer +1 día -->
+                  <button 
+                    data-postpone-id="${block.id}" 
+                    class="btn-postpone-block px-2.5 py-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center gap-1" 
+                    title="Posponer / Retrasar 1 día en IndexedDB (si el profesor ha dado más margen)"
+                  >
+                    <span>📅 +1d</span>
+                  </button>
 
                   <button data-delete-id="${block.id}" class="btn-delete-block p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors" title="Eliminar">
                     🗑️
@@ -216,12 +362,7 @@ export function renderAgendaView(container: HTMLElement): void {
                 <div>
                   <label class="block text-xs font-bold text-slate-700 mb-1">${t('agenda.fieldSubject')}</label>
                   <select id="nb-subject" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    <option value="Matemáticas">Matemáticas</option>
-                    <option value="Biología">Biología</option>
-                    <option value="Historia">Historia</option>
-                    <option value="Física y Química">Física y Química</option>
-                    <option value="Lengua y Literatura">Lengua y Literatura</option>
-                    <option value="Inglés">Inglés</option>
+                    ${gradeSubjects.map(s => `<option value="${s}">${s}</option>`).join('')}
                   </select>
                 </div>
                 <div>
@@ -262,11 +403,32 @@ export function renderAgendaView(container: HTMLElement): void {
     `;
 
     // Event listeners
+    container.querySelector('#btn-dismiss-inst-alert')?.addEventListener('click', () => {
+      activeInstitutionalAlert = null;
+      loadData();
+    });
+
     const checkboxes = container.querySelectorAll<HTMLInputElement>('.block-checkbox');
     checkboxes.forEach(cb => {
       cb.addEventListener('change', async () => {
         const id = Number(cb.dataset.id);
-        await db.studyBlocks.update(id, { completed: cb.checked });
+        const isChecked = cb.checked;
+        await db.studyBlocks.update(id, { completed: isChecked });
+
+        if (isChecked) {
+          const updatedBlock = await db.studyBlocks.get(id);
+          if (updatedBlock) {
+            const progression = await educationalApiService.checkAndTriggerCollaborativeProgression(updatedBlock);
+            if (progression) {
+              activeInstitutionalAlert = {
+                message: progression.notificationMessage,
+                title: progression.block.title,
+                subject: progression.sourceSubject
+              };
+            }
+          }
+        }
+
         loadData();
       });
     });
@@ -277,6 +439,25 @@ export function renderAgendaView(container: HTMLElement): void {
         const id = Number(btn.dataset.deleteId);
         await db.studyBlocks.delete(id);
         loadData();
+      });
+    });
+
+    const postponeBtns = container.querySelectorAll<HTMLButtonElement>('.btn-postpone-block');
+    postponeBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = Number(btn.dataset.postponeId);
+        const block = await db.studyBlocks.get(id);
+        if (block) {
+          const d = new Date(block.date);
+          d.setDate(d.getDate() + 1);
+          const newDate = d.toISOString().split('T')[0];
+          await db.studyBlocks.update(id, { 
+            date: newDate,
+            rescheduledCount: (block.rescheduledCount || 0) + 1,
+            notes: `${block.notes ? block.notes + ' • ' : ''}📅 Pospuesto +1d`.trim()
+          });
+          loadData();
+        }
       });
     });
 
@@ -324,25 +505,19 @@ export function renderAgendaView(container: HTMLElement): void {
       );
     });
 
-    // AI Study Plan Workflow trigger
+    // AI Study Plan Workflow trigger -> Abre la pantalla de planificación socrática interactiva
     const aiPlanBtn = container.querySelector('#btn-ai-plan');
-    aiPlanBtn?.addEventListener('click', async () => {
-      if (aiPlanBtn) aiPlanBtn.innerHTML = `<span>⏳ Planificando...</span>`;
-      try {
-        const examSubject = currentGrade === '1eso' ? 'Ciencias Naturales' : 'Filosofía y Matemáticas II';
-        const blocks = await aiClientService.generateStudyPlan(examSubject, 'Preparación de Hitos Semanales');
-        for (const b of blocks) {
-          await db.studyBlocks.add({
-            ...b,
-            gradeKey: currentGrade
-          });
+    aiPlanBtn?.addEventListener('click', () => {
+      const modalRoot = document.getElementById('modal-root') || document.body;
+      renderPlanificationModal(modalRoot, {
+        onApplied: () => {
+          modalRoot.innerHTML = '';
+          loadData();
+        },
+        onClose: () => {
+          modalRoot.innerHTML = '';
         }
-        await loadData();
-      } catch (err: any) {
-        alert(err.message || 'Error al ejecutar flujo de planificación IA');
-      } finally {
-        if (aiPlanBtn) aiPlanBtn.innerHTML = `<span>🤖 Planificar con IA</span>`;
-      }
+      });
     });
 
     // New block modal listeners
@@ -373,6 +548,7 @@ export function renderAgendaView(container: HTMLElement): void {
         durationMinutes: 45,
         completed: false,
         gradeKey: currentGrade,
+        origin: 'student',
         notes,
         syncedWithGoogle: true,
         googleEventId: `gcal_${Date.now()}`
