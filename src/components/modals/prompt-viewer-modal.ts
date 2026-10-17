@@ -1,4 +1,5 @@
 import type { AssembledPrompt, PromptLayer, AssembledAgendaPrompt, AgendaPromptPillar } from '../../types/prompts';
+import { formatMathInText } from '../common/math-expression';
 import { t } from '../../services/i18n';
 
 export interface PromptViewerModalOptions {
@@ -12,8 +13,8 @@ export interface PromptViewerModalOptions {
   onClose: () => void;
 }
 
-function formatMarkdown(content: string): string {
-  return content
+function formatMarkdown(content: string, enableMath = true): string {
+  const formatted = content
     .replace(/^# (.*$)/gim, '<h2 class="text-xl font-bold text-slate-900 mt-4 mb-2 pb-1 border-b border-slate-200/80">$1</h2>')
     .replace(/^## (.*$)/gim, '<h3 class="text-base font-bold text-slate-800 mt-3 mb-1.5">$1</h3>')
     .replace(/^### (.*$)/gim, '<h4 class="text-sm font-bold text-slate-800 mt-2 mb-1 text-brand-700">$1</h4>')
@@ -24,6 +25,7 @@ function formatMarkdown(content: string): string {
     .replace(/^\- (.*$)/gim, '<li class="ml-4 list-disc text-xs text-slate-700 mb-1">$1</li>')
     .replace(/^\d+\. (.*$)/gim, '<li class="ml-4 list-decimal text-xs text-slate-700 mb-1">$1</li>')
     .replace(/\n\n/gim, '<br/><br/>');
+  return enableMath ? formatMathInText(formatted) : formatted;
 }
 
 export function renderPromptViewerModal(
@@ -47,7 +49,7 @@ export function renderPromptViewerModal(
           title: assembledAgenda.title,
           subtitle: assembledAgenda.subtitle,
           badge: 'Estructura Propia de Agenda',
-          html: formatMarkdown(assembledAgenda.systemInstruction)
+          html: formatMarkdown(assembledAgenda.systemInstruction, false)
         };
       }
 
@@ -63,18 +65,39 @@ export function renderPromptViewerModal(
           subtitle: pillar.subtitle,
           source: pillar.source,
           badge: pillar.badge,
-          html: formatMarkdown(pillar.content)
+          html: formatMarkdown(pillar.content, false)
         };
       }
     }
 
     // 2. Caso Grafo Multinivel Socrático / Proyectos
     if (!assembled || activeTab === 'all') {
+      const rawText = assembled ? assembled.systemInstruction : markdownContent;
+      const isStandaloneN3 = !assembled && (title.includes('Nivel 3') || title.includes('Regulador') || (opts.subtitle || '').includes('Regulador'));
+
+      let htmlContent: string;
+      if (isStandaloneN3) {
+        htmlContent = formatMarkdown(rawText, false); // N3 excluido de renderizado matemático
+      } else if (assembled && rawText.includes('=== [MARCO REGULADOR Y DEONTOLÓGICO - NIVEL 3] ===')) {
+        // En ensamblado completo, proteger la sección N3 de matemáticas (contiene decretos ej. 217/2022)
+        const parts = rawText.split(/(=== \[MARCO REGULADOR Y DEONTOLÓGICO - NIVEL 3\] ===[\s\S]*?==================================================)/);
+        htmlContent = parts
+          .map(part => {
+            if (part.startsWith('=== [MARCO REGULADOR Y DEONTOLÓGICO - NIVEL 3] ===')) {
+              return formatMarkdown(part, false); // N3 sin matemáticas
+            }
+            return formatMarkdown(part, true);
+          })
+          .join('');
+      } else {
+        htmlContent = formatMarkdown(rawText, true);
+      }
+
       return {
         title: assembled ? t('promptModal.titleAssembled', { subject: assembled.subject }) : title,
         subtitle: assembled ? t('promptModal.subtitleAssembled', { topic: assembled.topicName }) : (opts.subtitle || t('promptModal.defaultSubtitle')),
         badge: assembled ? t('promptModal.badge4Layers') : (opts.badge?.text || t('promptModal.badgePrompt')),
-        html: formatMarkdown(assembled ? assembled.systemInstruction : markdownContent)
+        html: htmlContent
       };
     }
 
@@ -84,12 +107,14 @@ export function renderPromptViewerModal(
     if (activeTab === 'level2A') layer = assembled.layers.level2BaseTopic;
     if (activeTab === 'level2B') layer = assembled.layers.level2SpecificActivity;
 
+    const isRegulatoryN3 = activeTab === 'level3' || layer?.level === 'level3';
+
     if (!layer) {
       return {
         title,
         subtitle: opts.subtitle || '',
         badge: t('promptModal.badgeLayer'),
-        html: formatMarkdown(markdownContent)
+        html: formatMarkdown(markdownContent, !isRegulatoryN3)
       };
     }
 
@@ -98,7 +123,7 @@ export function renderPromptViewerModal(
       subtitle: layer.subtitle,
       source: layer.source,
       badge: layer.badge,
-      html: formatMarkdown(layer.content)
+      html: formatMarkdown(layer.content, !isRegulatoryN3) // N3 explícitamente excluido
     };
   }
 

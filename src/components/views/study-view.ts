@@ -2,6 +2,7 @@ import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
 import { promptOrchestratorService } from '../../services/prompt-orchestrator';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
+import { formatMathInText, renderMathCard } from '../common/math-expression';
 import { t } from '../../services/i18n';
 import type { ChatMessage } from '../../types/study';
 import type { TopicContextDefinition, ActivityDefinition } from '../../types/prompts';
@@ -310,11 +311,12 @@ export function renderStudyView(container: HTMLElement): void {
   }
 
   function formatMarkdownText(text: string): string {
-    return text
+    const formatted = text
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n\n/g, '<br/><br/>')
       .replace(/\n/g, '<br/>');
+    return formatMathInText(formatted);
   }
 
   function render(): void {
@@ -511,13 +513,7 @@ export function renderStudyView(container: HTMLElement): void {
 
               ${
                 activeActivity
-                  ? `
-                <div class="text-xs font-mono text-slate-700 bg-white p-2.5 rounded-xl border border-slate-200/90 flex items-center gap-2">
-                  <span class="text-brand-600 font-bold flex-shrink-0">Cas Actiu:</span>
-                  <span class="italic font-sans truncate">"${activeActivity.sentenceOrCase}"</span>
-                  <span class="ml-auto text-[10px] font-bold px-2 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 whitespace-nowrap">${activeActivity.variationType}</span>
-                </div>
-              `
+                  ? renderMathCard('Cas Actiu:', activeActivity.sentenceOrCase, activeActivity.variationType)
                   : ''
               }
             </div>
@@ -596,12 +592,12 @@ export function renderStudyView(container: HTMLElement): void {
 
                 <div class="p-4 rounded-2xl bg-brand-50/40 border border-brand-100 space-y-3">
                   <span id="flashcard-concept-${topic.id}" class="text-xs font-bold text-brand-700 block leading-relaxed">
-                    ${session.flashcardConcept || '¿Cómo definirías el concepto principal de esta tarea?'}
+                    ${formatMathInText(session.flashcardConcept || '¿Cómo definirías el concepto principal de esta tarea?')}
                   </span>
                   
                   <div id="flashcard-answer-${topic.id}" class="${session.flashcardRevealed ? '' : 'hidden'} text-xs text-slate-700 pt-2 border-t border-brand-200/50 space-y-1">
                     <p id="flashcard-explanation-${topic.id}" class="leading-relaxed">
-                      ${session.flashcardExplanation || ''}
+                      ${formatMathInText(session.flashcardExplanation || '')}
                     </p>
                   </div>
 
@@ -897,8 +893,8 @@ export function renderStudyView(container: HTMLElement): void {
             const conceptEl = container.querySelector(`#flashcard-concept-${topic.id}`);
             const explEl = container.querySelector(`#flashcard-explanation-${topic.id}`);
             const ansEl = container.querySelector(`#flashcard-answer-${topic.id}`);
-            if (conceptEl) conceptEl.textContent = card.concept;
-            if (explEl) explEl.textContent = card.explanation;
+            if (conceptEl) conceptEl.innerHTML = formatMathInText(card.concept);
+            if (explEl) explEl.innerHTML = formatMathInText(card.explanation);
             ansEl?.classList.add('hidden');
           } catch (err: any) {
             alert(err.message || 'Error al generar tarjeta con IA');
