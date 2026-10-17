@@ -170,7 +170,19 @@
       "level3": "N3: Regulador & Ética",
       "level2A": "N2.A: Base Temática",
       "level2B": "N2.B: Actividad & Variación"
-    }
+    },
+    "graphTitle": "Arquitectura del Grafo de Inferencia",
+    "graphSubtitle": "Flujo de confluencia multicapa hacia la System Instruction final",
+    "graphToggleShow": "Ver Grafo",
+    "graphToggleHide": "Ocultar Grafo",
+    "expandAll": "Expandir Todo",
+    "collapseAll": "Colapsar Todo",
+    "copyPrompt": "Copiar Prompt",
+    "copied": "¡Copiado!",
+    "consolidatedPill": "Consolidado",
+    "layerPill": "Capa",
+    "clickToInspect": "Haz clic en cualquier nodo para saltar a su capa en el acordeón",
+    "discreteComponents": "Componentes Discretos y Ensamblado"
   },
   "aiModal": {
     "title": "Configuración del Modelo de IA",
