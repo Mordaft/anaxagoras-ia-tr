@@ -1602,15 +1602,10 @@ Siguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocur
               </div>
 
               <!-- Grade Switcher for TR Live Defense -->
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>🎓</span>
-                    <span>Nivel Escolar (Demostración TR):</span>
-                  </span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                    ${n.user.stageName||"Piaget"}
-                  </span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span>🎓</span>
+                  <span>Nivel Escolar (Demostración TR):</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <button id="btn-modal-set-1eso" class="py-2 px-3 rounded-xl text-xs font-bold transition-all ${n.user.gradeKey==="1eso"?"bg-emerald-600 text-white shadow-sm":"bg-white hover:bg-slate-100 text-slate-700 border border-slate-200"}">
@@ -1620,9 +1615,6 @@ Siguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocur
                     🟣 2º Bachillerato (17-18)
                   </button>
                 </div>
-                <p class="text-[11px] text-slate-500 leading-tight">
-                  ${n.user.gradeKey==="1eso"?"• 1º de ESO: Operaciones Concretas. El complemento verbal se identifica en bloque sin exigir tipos.":"• 2º de Bachillerato: Operaciones Formales. Obligatorio indicar el tipo de complemento verbal (CPred vs CCL) y justificar con pruebas."}
-                </p>
               </div>
 
               <!-- Connected Services Status -->
@@ -3084,4 +3076,4 @@ Considera la oración: *"El tren llegó puntual a la estación"*. ¿Por qué 'pu
         ${b}
       </button>
     `}function c(d){return d.includes("document")?"📄":d.includes("presentation")||d.includes("slides")?"📊":d.includes("spreadsheet")||d.includes("sheet")?"📈":"📑"}a()}class ol{constructor(){we(this,"activeTab","agenda");we(this,"navbarRoot");we(this,"tabsRoot");we(this,"viewContainer");we(this,"modalRoot");we(this,"isReady",!1);this.navbarRoot=document.getElementById("navbar-root"),this.tabsRoot=document.getElementById("tabs-root"),this.viewContainer=document.getElementById("app-view-container"),this.modalRoot=document.getElementById("modal-root")}async start(){await Xt.init(),await js(),await Cn.register(),Xt.subscribe(()=>{this.isReady&&(this.renderHeaderAndTabs(),this.switchView(this.activeTab))}),xe.subscribe(()=>{this.isReady&&(this.renderHeaderAndTabs(),this.switchView(this.activeTab))}),this.renderHeaderAndTabs(),this.switchView(this.activeTab),this.isReady=!0}renderHeaderAndTabs(){Fs(this.navbarRoot,{onOpenAISettings:()=>this.openAISettingsModal(),onOpenAuth:()=>this.openAuthModal(),onLanguageChange:()=>{}}),Ks(this.tabsRoot,this.activeTab,{onTabChange:a=>{this.activeTab=a,this.renderHeaderAndTabs(),this.switchView(this.activeTab)}})}switchView(a){switch(this.viewContainer.innerHTML="",a){case"agenda":Zs(this.viewContainer);break;case"study":al(this.viewContainer);break;case"tasks":il(this.viewContainer);break}}openAISettingsModal(){Gs(this.modalRoot,{onSaved:()=>{this.modalRoot.innerHTML="",this.renderHeaderAndTabs()},onClose:()=>{this.modalRoot.innerHTML=""}})}openAuthModal(){Sn(this.modalRoot,{onClose:()=>{this.modalRoot.innerHTML=""},onStateChanged:()=>{this.renderHeaderAndTabs(),this.switchView(this.activeTab)}})}}document.addEventListener("DOMContentLoaded",()=>{new ol().start().catch(a=>{console.error("[Anaxagoras AI] Error al inicializar la aplicación:",a)})});
-//# sourceMappingURL=index-BQLcD-BD.js.map
+//# sourceMappingURL=index-BQTBTFCV.js.map
