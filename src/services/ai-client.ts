@@ -5,6 +5,7 @@ import { db } from './storage';
 import { googleAuthService } from './google-auth';
 
 import { promptOrchestratorService } from './prompt-orchestrator';
+import { agendaPromptService } from './agenda-prompt';
 
 import socraticTutorPrompt from '../prompts/nivel_1_funcional/socratic_tutor.md?raw';
 import agendaPlannerPrompt from '../prompts/nivel_1_funcional/agenda_planner.md?raw';
@@ -313,9 +314,10 @@ export class AIClientService {
     const gradeLevel = auth.user?.gradeLevel || '1º de ESO';
     const gradeKey = auth.user?.gradeKey || '1eso';
     const today = new Date().toISOString().split('T')[0];
+    const assembledAgenda = agendaPromptService.assembleAgendaPrompt(gradeKey);
 
     const systemPrompt = `
-${STATIC_PROMPTS.agenda}
+${assembledAgenda.systemInstruction}
 
 Eres el tutor socrático y mentor de gestión del tiempo de Anaxagoras AI para ${studentName} (${gradeLevel}).
 Tu objetivo es analizar la situación real del estudiante con base en los datos de su agenda local en IndexedDB y presentarle un resumen conversacional muy claro:

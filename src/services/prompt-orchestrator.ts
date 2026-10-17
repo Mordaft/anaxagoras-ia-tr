@@ -2,10 +2,12 @@ import type { StudentGrade } from '../types/auth';
 import type { 
   PromptFunctionalRole, 
   AssembledPrompt, 
+  AssembledAgendaPrompt,
   TopicContextDefinition, 
   ActivityDefinition, 
   PromptLayer 
 } from '../types/prompts';
+import { agendaPromptService } from './agenda-prompt';
 
 // Carga eagerly de todos los archivos markdown de prompts en Vite
 const promptFiles = import.meta.glob('../prompts/**/*.md', { 
@@ -520,6 +522,14 @@ ${activity ? `- Actividad Específica en Curso: ${activity.title} ("${activity.s
         level2SpecificActivity: activityLayer
       }
     };
+  }
+
+  /**
+   * Delega el ensamblado de la arquitectura propia del prompt de Agenda
+   * a su servicio especializado sin acoplar temas socráticos individuales.
+   */
+  public assembleAgendaPrompt(gradeKey: StudentGrade = '1eso'): AssembledAgendaPrompt {
+    return agendaPromptService.assembleAgendaPrompt(gradeKey);
   }
 }
 

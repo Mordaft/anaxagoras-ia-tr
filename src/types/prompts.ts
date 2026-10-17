@@ -28,6 +28,29 @@ export interface AssembledPrompt {
   };
 }
 
+export interface AgendaPromptPillar {
+  id: 'time_distribution' | 'priority_order' | 'commitment_deadlines' | 'adaptive_flexibility';
+  badge: string;
+  title: string;
+  subtitle: string;
+  source: string;
+  content: string;
+}
+
+export interface AssembledAgendaPrompt {
+  role: 'agenda';
+  gradeKey: StudentGrade;
+  title: string;
+  subtitle: string;
+  systemInstruction: string;
+  pillars: {
+    timeDistribution: AgendaPromptPillar;
+    priorityOrder: AgendaPromptPillar;
+    commitmentDeadlines: AgendaPromptPillar;
+    adaptiveFlexibility: AgendaPromptPillar;
+  };
+}
+
 export interface TopicContextDefinition {
   id: string;
   gradeKey: StudentGrade;

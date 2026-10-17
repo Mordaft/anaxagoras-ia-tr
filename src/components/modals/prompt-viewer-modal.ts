@@ -1,4 +1,4 @@
-import type { AssembledPrompt, PromptLayer } from '../../types/prompts';
+import type { AssembledPrompt, PromptLayer, AssembledAgendaPrompt, AgendaPromptPillar } from '../../types/prompts';
 import { t } from '../../services/i18n';
 
 export interface PromptViewerModalOptions {
@@ -8,6 +8,7 @@ export interface PromptViewerModalOptions {
   sourceApi?: string;
   gradeLevel?: string;
   assembledPrompt?: AssembledPrompt;
+  assembledAgendaPrompt?: AssembledAgendaPrompt;
   onClose: () => void;
 }
 
@@ -33,10 +34,41 @@ export function renderPromptViewerModal(
 ): void {
   const opts = options as PromptViewerModalOptions;
   const assembled = opts.assembledPrompt;
+  const assembledAgenda = opts.assembledAgendaPrompt;
 
-  let activeTab: 'all' | 'level1' | 'level3' | 'level2A' | 'level2B' = assembled ? 'all' : 'all';
+  type ModalTab = 'all' | 'level1' | 'level3' | 'level2A' | 'level2B' | 'agenda_time' | 'agenda_priority' | 'agenda_deadlines' | 'agenda_adaptive';
+  let activeTab: ModalTab = 'all';
 
   function getActiveContent(): { title: string; subtitle: string; source?: string; badge: string; html: string } {
+    // 1. Caso Agenda Especializada
+    if (assembledAgenda) {
+      if (activeTab === 'all') {
+        return {
+          title: assembledAgenda.title,
+          subtitle: assembledAgenda.subtitle,
+          badge: 'Estructura Propia de Agenda',
+          html: formatMarkdown(assembledAgenda.systemInstruction)
+        };
+      }
+
+      let pillar: AgendaPromptPillar | undefined;
+      if (activeTab === 'agenda_time') pillar = assembledAgenda.pillars.timeDistribution;
+      if (activeTab === 'agenda_priority') pillar = assembledAgenda.pillars.priorityOrder;
+      if (activeTab === 'agenda_deadlines') pillar = assembledAgenda.pillars.commitmentDeadlines;
+      if (activeTab === 'agenda_adaptive') pillar = assembledAgenda.pillars.adaptiveFlexibility;
+
+      if (pillar) {
+        return {
+          title: pillar.title,
+          subtitle: pillar.subtitle,
+          source: pillar.source,
+          badge: pillar.badge,
+          html: formatMarkdown(pillar.content)
+        };
+      }
+    }
+
+    // 2. Caso Grafo Multinivel Socrático / Proyectos
     if (!assembled || activeTab === 'all') {
       return {
         title: assembled ? t('promptModal.titleAssembled', { subject: assembled.subject }) : title,
@@ -81,7 +113,7 @@ export function renderPromptViewerModal(
           <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 flex-shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-accent-cyan text-white flex items-center justify-center text-xl shadow-md shadow-brand-500/20">
-                ${assembled ? '🧩' : (opts.institution ? '🏛️' : '📄')}
+                ${assembledAgenda ? '⏱️' : (assembled ? '🧩' : (opts.institution ? '🏛️' : '📄'))}
               </div>
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -98,7 +130,57 @@ export function renderPromptViewerModal(
             </button>
           </div>
 
-          <!-- Multi-Level Tabs (Grafo de Prompts) -->
+          <!-- Specialized Agenda Tabs (Estructura Propia de Agenda) -->
+          ${
+            assembledAgenda
+              ? `
+            <div class="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 flex-shrink-0 text-xs font-semibold">
+              <button data-tab="all" class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'all'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }">
+                <span>🔀</span>
+                <span>Completo (Visión General)</span>
+              </button>
+              <button data-tab="agenda_time" class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'agenda_time'
+                  ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-500/20'
+                  : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
+              }">
+                <span>⏱️</span>
+                <span>1. Distribución Homogénea</span>
+              </button>
+              <button data-tab="agenda_priority" class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'agenda_priority'
+                  ? 'bg-amber-600 text-white shadow-sm shadow-amber-500/20'
+                  : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              }">
+                <span>🎯</span>
+                <span>2. Orden de Prioridad</span>
+              </button>
+              <button data-tab="agenda_deadlines" class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'agenda_deadlines'
+                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20'
+                  : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+              }">
+                <span>📅</span>
+                <span>3. Fechas de Compromiso</span>
+              </button>
+              <button data-tab="agenda_adaptive" class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'agenda_adaptive'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/20'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              }">
+                <span>🔄</span>
+                <span>4. Adaptabilidad y JSON</span>
+              </button>
+            </div>
+          `
+              : ''
+          }
+
+          <!-- Multi-Level Tabs (Grafo de Prompts Socrático / Proyectos) -->
           ${
             assembled
               ? `

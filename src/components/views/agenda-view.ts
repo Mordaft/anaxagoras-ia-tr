@@ -3,7 +3,7 @@ import { googleCalendarService } from '../../services/google-calendar';
 import { aiClientService } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
 import { educationalApiService } from '../../services/educational-api';
-import { promptOrchestratorService } from '../../services/prompt-orchestrator';
+import { agendaPromptService } from '../../services/agenda-prompt';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { renderPlanificationModal } from '../modals/planification-modal';
 import { t } from '../../services/i18n';
@@ -474,44 +474,35 @@ export function renderAgendaView(container: HTMLElement): void {
       }
     });
 
-    // Prompt Viewer modal trigger (Section Prompt & Multi-Layer Graph)
+    // Prompt Viewer modal trigger (Agenda Prompt: Estructura propia con 4 pilares)
     container.querySelector('#btn-view-agenda-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
-      const assembled = promptOrchestratorService.assemblePrompt({
-        role: 'agenda',
-        gradeKey: currentGrade,
-        subject: 'Lengua Castellana y Literatura'
-      });
+      const assembledAgenda = agendaPromptService.assembleAgendaPrompt(currentGrade);
       renderPromptViewerModal(
         modalRoot, 
         t('agenda.modalPlannerTitle'), 
-        assembled.systemInstruction, 
+        assembledAgenda.systemInstruction, 
         { 
-          assembledPrompt: assembled,
+          assembledAgendaPrompt: assembledAgenda,
           subtitle: t('agenda.modalPlannerSubtitle'),
           onClose: () => { modalRoot.innerHTML = ''; } 
         }
       );
     });
 
-    // Curricular Prompt modal trigger (Institutional Educational API)
-    container.querySelector('#btn-view-agenda-curricular')?.addEventListener('click', async () => {
+    // Curricular Prompt modal trigger (Directriz Departamental sobre Tiempo, Deberes y Conciliación)
+    container.querySelector('#btn-view-agenda-curricular')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
-      const assembled = promptOrchestratorService.assemblePrompt({
-        role: 'agenda',
-        gradeKey: currentGrade,
-        subject: 'Lengua Castellana y Literatura'
-      });
+      const directive = agendaPromptService.getCurricularDirective(currentGrade);
       renderPromptViewerModal(
         modalRoot,
-        assembled.layers.level2BaseTopic.title,
-        assembled.layers.level2BaseTopic.content,
+        directive.title,
+        directive.content,
         {
-          assembledPrompt: assembled,
-          subtitle: t('agenda.modalCurricularSubtitle', { grade: currentGrade === '2batx' ? '2º Bachillerato' : '1º de ESO' }),
-          institution: "Departament d'Educació de la Generalitat de Catalunya (Esfer@)",
-          sourceApi: `https://api.educacio.gencat.cat/v1/curriculum/guardrails?grade=${currentGrade}`,
-          gradeLevel: currentGrade === '2batx' ? '2º de Bachillerato' : '1º de ESO',
+          subtitle: directive.subtitle,
+          institution: directive.institution,
+          sourceApi: directive.sourceApi,
+          gradeLevel: currentGrade === '2batx' ? '2º de Bachillerato (PAU)' : '1º de ESO',
           onClose: () => { modalRoot.innerHTML = ''; }
         }
       );

@@ -56,8 +56,8 @@
     "tooltipPromptPlanner": "Ikusi Ataleko Prompt-a: Agendaren Antolatzailea",
     "btnCurricularDirective": "Hezkuntza API Gidalerroa",
     "tooltipCurricularDirective": "Ikusi hezkuntza-APIak emandako Departamentuko Curriculuma",
-    "modalPlannerTitle": "Grafo Dinamikoa: Agendaren Antolatzailea",
-    "modalPlannerSubtitle": "4 Mailako Grafoa: Spaced Repetition Metodologia eta Aisialdiaren Babesa",
+    "modalPlannerTitle": "Prompt Egitura: Agenda Antolatzailea",
+    "modalPlannerSubtitle": "4 Zutabeko Egitura Propioa: Banaketa Homogeneoa, Lehentasuna eta Konpromiso Datak",
     "modalCurricularSubtitle": "Departamentuko Curriculum Gidalerroa ({{grade}})"
   },
   "study": {

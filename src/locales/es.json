@@ -56,8 +56,8 @@
     "tooltipPromptPlanner": "Ver Prompt de Sección: Planificador de Agenda",
     "btnCurricularDirective": "Directriz API Educativa",
     "tooltipCurricularDirective": "Ver Directriz Curricular Departamental provista por la API educativa",
-    "modalPlannerTitle": "Grafo Dinámico: Planificador de Agenda",
-    "modalPlannerSubtitle": "Grafo de 4 Niveles: Metodología Spaced Repetition y Protección del Ocio",
+    "modalPlannerTitle": "Estructura de Prompt: Planificador de Agenda",
+    "modalPlannerSubtitle": "Estructura Propia de 4 Pilares: Distribución Homogénea, Prioridad y Fechas de Compromiso",
     "modalCurricularSubtitle": "Directriz Curricular Departamental ({{grade}})"
   },
   "study": {
