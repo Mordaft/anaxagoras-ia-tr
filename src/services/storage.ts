@@ -225,6 +225,25 @@ export async function ensureGradeSpecificProjectTasks(): Promise<void> {
     }
   }
 
+  // Backfill topicId and activityId for existing tasks if missing
+  const untaggedTasks = await db.projectTasks.filter(t => !t.topicId).toArray();
+  for (const t of untaggedTasks) {
+    if (!t.id) continue;
+    if (t.gradeKey === '1eso') {
+      if (t.subject.includes('Lengua')) {
+        await db.projectTasks.update(t.id, { topicId: 'topic_lengua_1eso', activityId: 'act_lengua_1eso_1' });
+      } else {
+        await db.projectTasks.update(t.id, { topicId: 'topic_naturales_1eso', activityId: 'act_naturales_1eso_1' });
+      }
+    } else if (t.gradeKey === '2batx') {
+      if (t.subject.includes('Lengua')) {
+        await db.projectTasks.update(t.id, { topicId: 'topic_lengua_2batx', activityId: 'act_lengua_2batx_1' });
+      } else {
+        await db.projectTasks.update(t.id, { topicId: 'topic_tecnologia_2batx', activityId: 'act_tecnologia_2batx_1' });
+      }
+    }
+  }
+
   const existing1eso = await db.projectTasks.filter(t => t.gradeKey === '1eso').count();
   const existing2batx = await db.projectTasks.filter(t => t.gradeKey === '2batx').count();
 
@@ -237,6 +256,8 @@ export async function ensureGradeSpecificProjectTasks(): Promise<void> {
         title: 'Análisis Sintáctico: El Predicado y el Complemento Verbal',
         subject: 'Lengua Castellana y Literatura',
         gradeKey: '1eso',
+        topicId: 'topic_lengua_1eso',
+        activityId: 'act_lengua_1eso_1',
         dueDate: nextWeek,
         currentPhase: 'writing',
         autonomyScore: 75,
@@ -281,6 +302,8 @@ export async function ensureGradeSpecificProjectTasks(): Promise<void> {
         title: 'Proyecto de Ciencias: Ecosistemas y Maqueta de Biodiversidad',
         subject: 'Ciencias Naturales',
         gradeKey: '1eso',
+        topicId: 'topic_naturales_1eso',
+        activityId: 'act_naturales_1eso_1',
         dueDate: inTwoWeeks,
         currentPhase: 'research',
         autonomyScore: 50,
@@ -324,6 +347,8 @@ export async function ensureGradeSpecificProjectTasks(): Promise<void> {
         title: 'Sintaxis Superior: Tipología y Pruebas de Complementos Verbales (PAU)',
         subject: 'Lengua Castellana y Literatura',
         gradeKey: '2batx',
+        topicId: 'topic_lengua_2batx',
+        activityId: 'act_lengua_2batx_1',
         dueDate: nextWeek,
         currentPhase: 'writing',
         autonomyScore: 60,
@@ -374,6 +399,8 @@ export async function ensureGradeSpecificProjectTasks(): Promise<void> {
         title: 'Monografía: Energías Renovables en el Mediterráneo',
         subject: 'Ciencias y Tecnología',
         gradeKey: '2batx',
+        topicId: 'topic_tecnologia_2batx',
+        activityId: 'act_tecnologia_2batx_1',
         dueDate: inTwoWeeks,
         currentPhase: 'research',
         autonomyScore: 75,

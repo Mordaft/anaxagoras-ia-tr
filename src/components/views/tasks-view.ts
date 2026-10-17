@@ -1,8 +1,7 @@
 import { db, ensureLenguaCastellanaTasks } from '../../services/storage';
 import { googleDriveService } from '../../services/google-drive';
 import { googleAuthService } from '../../services/google-auth';
-import { educationalApiService } from '../../services/educational-api';
-import { STATIC_PROMPTS } from '../../services/ai-client';
+import { promptOrchestratorService } from '../../services/prompt-orchestrator';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
 import type { ProjectTask, TaskPhase } from '../../types/tasks';
@@ -41,13 +40,13 @@ export function renderTasksView(container: HTMLElement): void {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            <button id="btn-view-project-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Prompt de Sección: Mentor de Trabajos">
+            <button id="btn-view-project-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipPromptProject')}">
               <span>📄</span>
-              <span>Prompt Trabajos</span>
+              <span>${t('tasks.btnPromptProject')}</span>
             </button>
-            <button id="btn-view-project-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Directriz Curricular Departamental provista por la API educativa">
+            <button id="btn-view-project-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipCurricularDirective')}">
               <span>🏛️</span>
-              <span>Directriz API Educativa</span>
+              <span>${t('tasks.btnCurricularDirective')}</span>
             </button>
             <button id="btn-new-task" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
               <span>＋</span>
@@ -68,8 +67,8 @@ export function renderTasksView(container: HTMLElement): void {
               </div>
             `
               : displayedTasks
-                  .map(
-                    task => `
+                  .map(task => {
+                    return `
               <div class="glass-panel p-6 rounded-3xl border ${task.gradeKey === '1eso' ? 'border-emerald-200/80 bg-emerald-50/15' : task.gradeKey === '2batx' ? 'border-purple-200/80 bg-purple-50/15' : 'border-slate-200'} glow-card space-y-5">
                 
                 <!-- Task Header -->
@@ -83,11 +82,11 @@ export function renderTasksView(container: HTMLElement): void {
                       ${
                         task.gradeKey === '1eso'
                           ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              🟢 1º de ESO • Operaciones Concretas
+                              ${t('tasks.grade1esoBadge')}
                             </span>`
                           : task.gradeKey === '2batx'
                           ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
-                              🟣 2º de Bachillerato • Operaciones Formales (PAU)
+                              ${t('tasks.grade2batxBadge')}
                             </span>`
                           : ''
                       }
@@ -95,11 +94,19 @@ export function renderTasksView(container: HTMLElement): void {
                     <p class="text-xs text-slate-600 mt-1">${task.notes}</p>
                   </div>
 
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
                     <div class="text-left sm:text-right">
                       <span class="block text-xs font-bold text-slate-700">${t('tasks.dueDate')}: ${task.dueDate}</span>
                       <span class="text-[11px] text-brand-600 font-semibold">${t('tasks.autonomy')}: ${calculateTaskScore(task)}%</span>
                     </div>
+                    <button 
+                      data-task-prompt-id="${task.id}" 
+                      class="btn-view-task-prompt px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+                      title="${t('tasks.tooltipViewTaskPrompt', { title: task.title })}"
+                    >
+                      <span>🧩</span>
+                      <span>${t('tasks.btnViewTaskPrompt')}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -110,7 +117,7 @@ export function renderTasksView(container: HTMLElement): void {
                   <div class="p-3.5 rounded-2xl ${task.gradeKey === '1eso' ? 'bg-emerald-50 border border-emerald-200 text-emerald-900' : 'bg-purple-50 border border-purple-200 text-purple-900'} text-xs flex items-start gap-2.5">
                     <span class="text-base flex-shrink-0">🧠</span>
                     <div>
-                      <span class="font-bold block">Fundamento Pedagógico (Piaget & Guardrails):</span>
+                      <span class="font-bold block">${t('tasks.pedagogicalFoundation')}</span>
                       <span class="leading-relaxed">${task.pedagogicalNote}</span>
                     </div>
                   </div>
@@ -208,8 +215,8 @@ export function renderTasksView(container: HTMLElement): void {
                 </div>
 
               </div>
-            `
-                  )
+            `;
+                  })
                   .join('')
           }
         </div>
@@ -322,15 +329,58 @@ export function renderTasksView(container: HTMLElement): void {
       modal?.classList.add('hidden');
     });
 
-    // View Project Guide Prompt modal (Section Prompt)
+    // Specific Task Prompt Modal Trigger (for each deliverable)
+    container.querySelectorAll('.btn-view-task-prompt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const taskId = Number((btn as HTMLElement).dataset.taskPromptId);
+        const task = tasks.find(t => t.id === taskId);
+        if (!task) return;
+
+        const taskGrade = (task.gradeKey === '2batx' || task.gradeKey === '1eso') ? task.gradeKey : currentGrade;
+        const taskTopic = task.topicId 
+          ? promptOrchestratorService.findTopicById(task.topicId) 
+          : promptOrchestratorService.findTopicBySubjectOrKeyword(task.subject, taskGrade, task.title);
+        const taskActivity = task.activityId 
+          ? promptOrchestratorService.findActivityById(task.activityId) 
+          : (taskTopic ? promptOrchestratorService.getActivitiesForTopic(taskTopic.id)[0] : undefined);
+
+        const assembled = promptOrchestratorService.assemblePrompt({
+          role: 'project',
+          gradeKey: taskGrade,
+          subject: task.subject,
+          topicId: taskTopic?.id,
+          activityId: taskActivity?.id
+        });
+
+        const modalRoot = document.getElementById('modal-root') || document.body;
+        renderPromptViewerModal(
+          modalRoot,
+          t('tasks.modalTaskPromptTitle', { title: task.title }),
+          assembled.systemInstruction,
+          {
+            assembledPrompt: assembled,
+            subtitle: t('tasks.modalTaskPromptSubtitle', { subject: task.subject }),
+            onClose: () => { modalRoot.innerHTML = ''; }
+          }
+        );
+      });
+    });
+
+    // View Project Guide Prompt modal (Section Prompt & Multi-Layer Graph)
     container.querySelector('#btn-view-project-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'project',
+        gradeKey: currentGrade,
+        subject: 'Lengua Castellana y Literatura'
+      });
       renderPromptViewerModal(
         modalRoot,
-        'Prompt Estático: Mentor de Trabajos y Proyectos (project_guide.md)',
-        STATIC_PROMPTS.project,
+        t('tasks.modalProjectTitle'),
+        assembled.systemInstruction,
         { 
-          subtitle: 'Prompt Transversal de Sección (Metodología de 4 Fases y Auditoría de Autoría)',
+          assembledPrompt: assembled,
+          subtitle: t('tasks.modalProjectSubtitle'),
           onClose: () => { modalRoot.innerHTML = ''; } 
         }
       );
@@ -339,16 +389,21 @@ export function renderTasksView(container: HTMLElement): void {
     // View Curricular Prompt modal (Institutional Educational API)
     container.querySelector('#btn-view-project-curricular')?.addEventListener('click', async () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
-      const curricularData = await educationalApiService.getDepartmentalPrompt('Lengua Castellana y Literatura', currentGrade);
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'project',
+        gradeKey: currentGrade,
+        subject: 'Lengua Castellana y Literatura'
+      });
       renderPromptViewerModal(
         modalRoot,
-        curricularData.subject,
-        curricularData.promptMarkdown,
+        assembled.layers.level2BaseTopic.title,
+        assembled.layers.level2BaseTopic.content,
         {
-          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
-          institution: curricularData.institution,
-          sourceApi: curricularData.sourceApi,
-          gradeLevel: curricularData.gradeLevel,
+          assembledPrompt: assembled,
+          subtitle: t('agenda.modalCurricularSubtitle', { grade: currentGrade === '2batx' ? '2º Bachillerato' : '1º de ESO' }),
+          institution: "Departament d'Educació de la Generalitat de Catalunya (Esfer@)",
+          sourceApi: `https://api.educacio.gencat.cat/v1/curriculum/guardrails?grade=${currentGrade}`,
+          gradeLevel: currentGrade === '2batx' ? '2º de Bachillerato' : '1º de ESO',
           onClose: () => { modalRoot.innerHTML = ''; }
         }
       );

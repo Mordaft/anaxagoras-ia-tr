@@ -3,12 +3,13 @@ import type { ChatMessage, FlashCard } from '../types/study';
 import type { StudyBlock, AgendaStats, PlanDialogMessage } from '../types/agenda';
 import { db } from './storage';
 import { googleAuthService } from './google-auth';
-import { educationalApiService } from './educational-api';
 
-import socraticTutorPrompt from '../prompts/socratic_tutor.md?raw';
-import agendaPlannerPrompt from '../prompts/agenda_planner.md?raw';
-import projectGuidePrompt from '../prompts/project_guide.md?raw';
-import activeRecallPrompt from '../prompts/active_recall_generator.md?raw';
+import { promptOrchestratorService } from './prompt-orchestrator';
+
+import socraticTutorPrompt from '../prompts/nivel_1_funcional/socratic_tutor.md?raw';
+import agendaPlannerPrompt from '../prompts/nivel_1_funcional/agenda_planner.md?raw';
+import projectGuidePrompt from '../prompts/nivel_1_funcional/project_guide.md?raw';
+import activeRecallPrompt from '../prompts/nivel_1_funcional/active_recall_generator.md?raw';
 
 export const STATIC_PROMPTS = {
   socratic: socraticTutorPrompt,
@@ -165,38 +166,24 @@ export class AIClientService {
     studentMessage: string,
     subject: string,
     topic: string,
-    history: ChatMessage[]
+    history: ChatMessage[],
+    activityId?: string
   ): Promise<ChatMessage> {
     const authState = googleAuthService.getState();
     const user = authState.user;
-    const gradeLevel = user?.gradeLevel || '1º de ESO';
-    const stageName = user?.stageName || 'Operaciones Concretas';
     const gradeKey = user?.gradeKey || '1eso';
 
-    // 1. Obtención de la Directriz Curricular Departamental provista por la API educativa institucional
-    const curricularDirective = await educationalApiService.getDepartmentalPrompt(subject, gradeKey);
+    // 1. Orquestación Dinámica del Prompt combinando los 4 niveles:
+    //    Nivel 1 (Funcional Socrático) + Nivel 3 (Regulador LOMLOE / Ética) + Nivel 2.A (Línea Base Temática) + Nivel 2.B (Foco Actividad y Variación)
+    const assembled = promptOrchestratorService.assemblePrompt({
+      role: 'socratic',
+      gradeKey,
+      subject,
+      topicId: topic.startsWith('topic_') || topic.startsWith('t_') ? topic : undefined,
+      activityId
+    });
 
-    // 2. Composición del System Instruction separando estrictamente:
-    //    a) Prompt de Sección (metodología pedagógica y guardrails no negociables)
-    //    b) Directriz Curricular Departamental (proporcionada por la API de la entidad educativa según curso del alumno)
-    //    c) Contexto dinámico de sesión
-    const systemInstruction = `
-${STATIC_PROMPTS.socratic}
-
----
-=== DIRECTRIZ CURRICULAR DEPARTAMENTAL ===
-Fuente: ${curricularDirective.institution}
-Endpoint API: ${curricularDirective.sourceApi}
-Nivel Asignado: ${curricularDirective.gradeLevel} (${curricularDirective.stageName})
-
-${curricularDirective.promptMarkdown}
-==========================================
-
-CONTEXTO DE LA SESIÓN:
-- Alumno Conectado: ${user?.name || 'Estudiante'} (${gradeLevel} • ${stageName})
-- Asignatura: ${subject}
-- Tema Actual: ${topic}
-`.trim();
+    const systemInstruction = assembled.systemInstruction;
 
     // Si el último mensaje del historial ya es el mensaje actual del alumno (porque la vista lo añadió para la UI),
     // lo excluimos del historial previo para no duplicarlo al añadir { role: 'user', content: studentMessage }.

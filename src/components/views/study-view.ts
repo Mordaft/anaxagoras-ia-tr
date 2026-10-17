@@ -1,68 +1,35 @@
 import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
-import { educationalApiService } from '../../services/educational-api';
+import { promptOrchestratorService } from '../../services/prompt-orchestrator';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { t } from '../../services/i18n';
-import type { ChatMessage, StudyTopic } from '../../types/study';
-
-const ALL_STUDY_TOPICS: StudyTopic[] = [
-  {
-    id: 't_lengua_1eso',
-    subject: 'Lengua Castellana',
-    name: 'Análisis de Oraciones: Sujeto y Complemento Verbal',
-    level: '1º de ESO (12 años)',
-    keyConcepts: ['Sujeto y Predicado', 'Verbo', 'Complemento Verbal (en bloque)']
-  },
-  {
-    id: 't_lengua_2batx',
-    subject: 'Lengua Castellana',
-    name: 'Sintaxis Superior: Tipología y Pruebas de Complementos (PAU)',
-    level: '2º de Bachillerato (17-18 años)',
-    keyConcepts: ['CPredicativo (concordancia)', 'CRV vs CC', 'Pruebas sintácticas PAU']
-  },
-  {
-    id: 't_math',
-    subject: 'Matemáticas',
-    name: 'Ecuaciones y Funciones Cuadráticas',
-    level: '4º ESO',
-    keyConcepts: ['Fórmula general', 'Vértice de la parábola', 'Discriminante']
-  },
-  {
-    id: 't_bio',
-    subject: 'Biología',
-    name: 'Metabolismo Celular y Fotosíntesis',
-    level: '4º ESO / Bachillerato',
-    keyConcepts: ['ATP y Energía', 'Fase luminosa', 'Ciclo de Calvin']
-  },
-  {
-    id: 't_hist',
-    subject: 'Historia',
-    name: 'Revolución Industrial y Cambios Sociales',
-    level: '4º ESO',
-    keyConcepts: ['Máquina de vapor', 'Movimiento obrero', 'Causas económicas']
-  }
-];
+import type { ChatMessage } from '../../types/study';
+import type { TopicContextDefinition, ActivityDefinition } from '../../types/prompts';
 
 export function renderStudyView(container: HTMLElement): void {
   const auth = googleAuthService.getState();
   const currentGrade = auth.user?.gradeKey || '1eso';
   
-  // Filter topics adapted to the connected student's grade level
-  const availableTopics = ALL_STUDY_TOPICS.filter(t => {
-    if (t.id === 't_lengua_1eso') return currentGrade === '1eso';
-    if (t.id === 't_lengua_2batx') return currentGrade === '2batx';
-    return true;
-  });
+  // Obtener temas curriculares del grado actual mediante el orquestador
+  const availableTopics: TopicContextDefinition[] = promptOrchestratorService.getTopicsForGrade(currentGrade);
+  let selectedTopic = availableTopics[0];
 
-  let selectedTopic = currentGrade === '2batx' 
-    ? (availableTopics.find(t => t.id === 't_lengua_2batx') || availableTopics[0])
-    : (availableTopics.find(t => t.id === 't_lengua_1eso') || availableTopics[0]);
+  // Actividades / variaciones asociadas al tema activo
+  let availableActivities: ActivityDefinition[] = promptOrchestratorService.getActivitiesForTopic(selectedTopic.id);
+  let selectedActivity: ActivityDefinition | undefined = availableActivities[0];
 
-  function getInitialMessage(topic: StudyTopic): ChatMessage {
+  function getInitialMessage(topic: TopicContextDefinition, activity?: ActivityDefinition): ChatMessage {
     const isLengua = topic.subject.includes('Lengua');
-    const isBatx = topic.id === 't_lengua_2batx';
+    const isBatx = topic.gradeKey === '2batx';
 
-    let content = `¡Hola! Soy tu tutor socrático en **${topic.subject}** (${topic.name}).\n\nRecuerda: aquí no te daré las respuestas masticadas, sino que exploraremos juntos los conceptos paso a paso para que tu cerebro construya conexiones reales.\n\n¿Qué ejercicio o concepto estás abordando ahora mismo?`;
+    let content = `¡Hola! Soy tu tutor socrático en **${topic.subject}** (*${topic.name}*).\n\nAquí no te daré soluciones directas, sino que exploraremos juntos los conceptos paso a paso para que tu cerebro construya conexiones reales.\n\n`;
+
+    if (activity) {
+      content += `🎯 **Reto activo:** *${activity.title}*\n*"${activity.sentenceOrCase}"*\n\n¿Por dónde te gustaría empezar a razonarlo?`;
+    } else {
+      content += `¿Qué duda o ejercicio estás abordando ahora mismo?`;
+    }
+
     let suggestedPrompts = [
       'No sé cómo empezar el ejercicio',
       'Tengo dudas con el primer paso',
@@ -70,19 +37,51 @@ export function renderStudyView(container: HTMLElement): void {
     ];
 
     if (isLengua && !isBatx) {
-      content = `¡Hola, Marc! Soy tu tutor socrático en **Lengua Castellana (1º de ESO)**. 🚂✨\n\nEn 1º de ESO aprenderemos a identificar el sujeto, el verbo y el **Complemento Verbal** en bloque, sin agobiarnos con nombres difíciles ni clasificaciones complejas.\n\nPor ejemplo, en la oración: *"El tren llegó puntual a la estación"*, ¿quién realiza la acción y qué palabras acompañan al verbo para completar la idea?`;
-      suggestedPrompts = [
-        'El sujeto es "El tren" y el verbo "llegó"',
-        '¿Qué palabras forman el complemento verbal?',
-        '¿Cómo distingo el sujeto del predicado?'
-      ];
+      if (activity?.order === 2) {
+        content = `¡Hola Marc! Pasamos a la **Variación 1** de sintaxis oracional: 🚂🔄\n\nFíjate en esta oración: *"Por la mañana sonó ruidosa la alarma en el pasillo"*\n\nAquí el orden ha cambiado y la oración no empieza por el sujeto. ¿Qué palabra realiza la acción y con cuál concuerda el verbo *sonó*?`;
+        suggestedPrompts = [
+          'El sujeto es "la alarma", concuerda con "sonó"',
+          '¿Por qué "Por la mañana" no es el sujeto?',
+          '¿Qué forma el complemento verbal en bloque?'
+        ];
+      } else if (activity?.order === 3) {
+        content = `¡Excelente avance Marc! Vamos con la **Variación 2** (Transferencia a contexto narrativo): 🎒🌲\n\nOración: *"Los jóvenes exploradores regresaron cansados al campamento al anochecer"*\n\n¿Quién es el sujeto plural y qué palabras acompañan al verbo *regresaron* explicando cómo y hacia dónde se mueven?`;
+        suggestedPrompts = [
+          'El sujeto es "Los jóvenes exploradores"',
+          'El complemento verbal es "cansados al campamento al anochecer"',
+          '¿Por qué no separamos los tipos de complementos?'
+        ];
+      } else {
+        content = `¡Hola, Marc! Soy tu tutor socrático en **Lengua Castellana (1º de ESO)**. 🚂✨\n\nEn 1º de ESO aprenderemos a identificar el sujeto, el verbo y el **Complemento Verbal** en bloque, sin agobiarnos con clasificaciones abstractas.\n\nPor ejemplo, en la oración: *"El tren llegó puntual a la estación"*, ¿quién realiza la acción y qué palabras acompañan al verbo para completar la idea?`;
+        suggestedPrompts = [
+          'El sujeto es "El tren" y el verbo "llegó"',
+          '¿Qué palabras forman el complemento verbal?',
+          '¿Cómo distingo el sujeto del predicado?'
+        ];
+      }
     } else if (isLengua && isBatx) {
-      content = `¡Hola, Álvaro! Soy tu tutor socrático en **Lengua Castellana (2º de Bachillerato - Preparación PAU)**. 🎓📚\n\nEn este nivel analizamos la sintaxis con rigor gramatical: es obligatorio clasificar la tipología exacta de cada complemento verbal (CD, CI, CRV, CC, CPred, CAg) y demostrarlo con pruebas sintácticas formales.\n\nConsidera la oración: *"El tren llegó puntual a la estación"*. ¿Por qué 'puntual' no puede ser un CC de Modo y qué prueba sintáctica formal demuestra que es un **Complemento Predicativo (CPred)**?`;
-      suggestedPrompts = [
-        '"Puntual" concuerda con el sujeto en género y número',
-        '¿Y qué función sintáctica tiene "a la estación"?',
-        '¿Cómo distingo un CPred de un Atributo?'
-      ];
+      if (activity?.order === 2) {
+        content = `¡Hola Álvaro! Abordamos la **Variación 1** (Doble predicación sobre el CD - PAU): 🎓⚖️\n\nOración: *"El tribunal consideró inocente al acusado tras el juicio"*\n\nAquí el adjetivo *inocente* no se refiere al sujeto (*El tribunal*), sino al CD (*al acusado*). ¿Qué prueba sintáctica formal demuestra la concordancia entre el CD y el Complemento Predicativo?`;
+        suggestedPrompts = [
+          'Si fuera plural: "consideró inocentes a los acusados"',
+          '¿Cómo demuestro que "al acusado" es CD?',
+          '¿Por qué no es una oración atributiva?'
+        ];
+      } else if (activity?.order === 3) {
+        content = `¡Hola Álvaro! Desafío de **Variación 2** (Contraste formal CPred vs CCM): 🎓🔍\n\nCompara estas dos oraciones de examen PAU:\n- A: *"El tren llegó puntual a la estación."*\n- B: *"El tren llegó puntualmente a la estación."*\n\n¿Qué prueba morfosintáctica demuestra que en A tenemos un CPred y en B un CC de Modo?`;
+        suggestedPrompts = [
+          '"Puntual" concuerda en plural; "puntualmente" es invariable',
+          '¿Por qué un adjetivo no puede ser CCM según la RAE?',
+          '¿Qué función tiene "a la estación" en ambas?'
+        ];
+      } else {
+        content = `¡Hola, Álvaro! Soy tu tutor socrático en **Lengua Castellana (2º de Bachillerato - Preparación PAU)**. 🎓📚\n\nEn este nivel analizamos la sintaxis con rigor gramatical: es obligatorio clasificar la tipología exacta de cada complemento verbal y demostrarlo con pruebas formales.\n\nConsidera la oración: *"El tren llegó puntual a la estación"*. ¿Por qué 'puntual' no puede ser un CC de Modo y qué prueba sintáctica demuestra que es un **Complemento Predicativo (CPred)**?`;
+        suggestedPrompts = [
+          '"Puntual" concuerda con el sujeto en género y número',
+          '¿Y qué función sintáctica tiene "a la estación"?',
+          '¿Cómo distingo un CPred de un Atributo?'
+        ];
+      }
     }
 
     return {
@@ -95,9 +94,14 @@ export function renderStudyView(container: HTMLElement): void {
     };
   }
 
-  let messages: ChatMessage[] = [getInitialMessage(selectedTopic)];
+  let messages: ChatMessage[] = [getInitialMessage(selectedTopic, selectedActivity)];
 
   function render() {
+    availableActivities = promptOrchestratorService.getActivitiesForTopic(selectedTopic.id);
+    if (!selectedActivity || !availableActivities.some(a => a.id === selectedActivity?.id)) {
+      selectedActivity = availableActivities[0];
+    }
+
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
@@ -109,12 +113,12 @@ export function renderStudyView(container: HTMLElement): void {
             </div>
             <div>
               <h3 class="font-display font-bold text-base sm:text-lg">${t('study.bannerTitle')}</h3>
-              <p class="text-xs text-white/90">${t('study.bannerDesc')}</p>
+              <p class="text-xs text-white/90">${t('study.bannerGraphDesc')}</p>
             </div>
           </div>
           <div class="flex items-center gap-2 bg-black/15 backdrop-blur-md px-3.5 py-1.5 rounded-2xl text-xs font-semibold self-stretch md:self-auto justify-center">
             <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
-            <span>${t('study.bannerBadge')}</span>
+            <span>${currentGrade === '2batx' ? 'Álvaro Martín (2º Batx PAU)' : 'Marc Vidal (1º ESO)'}</span>
           </div>
         </div>
 
@@ -122,33 +126,57 @@ export function renderStudyView(container: HTMLElement): void {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           <!-- Socratic Chat Interface (8 cols) -->
-          <div class="lg:col-span-8 flex flex-col glass-panel rounded-3xl border border-slate-200 overflow-hidden h-[620px]">
+          <div class="lg:col-span-8 flex flex-col glass-panel rounded-3xl border border-slate-200 overflow-hidden h-[640px]">
             
             <!-- Chat Topbar -->
-            <div class="p-4 border-b border-slate-200 bg-white/50 flex items-center justify-between gap-3 flex-wrap">
+            <div class="p-4 border-b border-slate-200 bg-white/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div class="flex items-center gap-3">
                 <span class="text-2xl">🧠</span>
                 <div>
                   <h4 class="font-bold text-sm text-slate-900">${selectedTopic.name}</h4>
-                  <span class="text-xs text-brand-600 font-semibold">${selectedTopic.subject} • ${selectedTopic.level}</span>
+                  <span class="text-xs text-brand-600 font-semibold">${selectedTopic.subject} • ${currentGrade === '2batx' ? '2º Bachillerato (PAU)' : '1º de ESO'}</span>
                 </div>
               </div>
 
-              <!-- Topic Selector & Prompt Inspector -->
+              <!-- Topic & Variation Selectors & Prompt Inspector -->
               <div class="flex items-center gap-2 flex-wrap">
-                <button id="btn-view-socratic-prompt" class="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Prompt de Sección: Tutor Socrático">
-                  <span>📄</span>
-                  <span>Prompt Socrático</span>
+                <button id="btn-view-prompt-graph" class="px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm" title="${t('study.tooltipPromptGraph')}">
+                  <span>🧩</span>
+                  <span>${t('study.btnPromptGraph')}</span>
                 </button>
-                <button id="btn-view-socratic-curricular" class="px-2.5 py-1.5 rounded-xl bg-purple-50 border border-purple-200 hover:bg-purple-100 text-purple-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Ver Directriz Curricular Departamental provista por la API educativa">
-                  <span>🏛️</span>
-                  <span>Directriz API Educativa</span>
-                </button>
-                <select id="select-topic" class="text-xs font-medium px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500">
+                <select id="select-topic" class="text-xs font-medium px-3 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 max-w-[210px] truncate">
                   ${availableTopics.map(t => `<option value="${t.id}" ${t.id === selectedTopic.id ? 'selected' : ''}>${t.subject}: ${t.name}</option>`).join('')}
                 </select>
               </div>
             </div>
+
+            <!-- Activity / Variation Bar (Repetición con Variación) -->
+            ${
+              availableActivities.length > 0
+                ? `
+              <div class="px-4 py-2 border-b border-slate-200/70 bg-slate-50/80 flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="font-bold text-slate-600 flex items-center gap-1">
+                    <span>🎯</span>
+                    <span>${t('study.activityVariationLabel')}</span>
+                  </span>
+                  <select id="select-activity" class="text-xs font-semibold px-2.5 py-1 rounded-lg border border-brand-200 bg-brand-50/60 text-brand-800 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    ${availableActivities.map(a => `<option value="${a.id}" ${a.id === selectedActivity?.id ? 'selected' : ''}>${t('study.stepPrefix')} ${a.order}: ${a.title}</option>`).join('')}
+                  </select>
+                </div>
+                ${
+                  selectedActivity
+                    ? `
+                  <div class="text-[11px] font-mono text-slate-500 bg-white px-2.5 py-0.5 rounded-md border border-slate-200 truncate max-w-xs">
+                    "${selectedActivity.sentenceOrCase}"
+                  </div>
+                `
+                    : ''
+                }
+              </div>
+            `
+                : ''
+            }
 
             <!-- Messages Stream -->
             <div id="chat-stream" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
@@ -214,13 +242,26 @@ export function renderStudyView(container: HTMLElement): void {
               </div>
 
               <div id="flashcard-box" class="p-4 rounded-2xl bg-brand-50/40 border border-brand-100 space-y-3">
-                <span id="flashcard-concept" class="text-xs font-bold text-brand-700 block">¿Cuál es el significado del discriminante (b² - 4ac) en una ecuación de segundo grado?</span>
+                <span id="flashcard-concept" class="text-xs font-bold text-brand-700 block">
+                  ${
+                    selectedTopic.subject.includes('Lengua')
+                      ? currentGrade === '1eso'
+                        ? 'En 1º de ESO, ¿cómo identificamos el Complemento Verbal en "El tren llegó puntual a la estación"?'
+                        : 'En 2º de Bachillerato, ¿qué prueba sintáctica demuestra que "puntual" es CPred y no CCM?'
+                      : `¿Cómo definirías la clave de ${selectedTopic.name}?`
+                  }
+                </span>
                 
                 <div id="flashcard-answer" class="hidden text-xs text-slate-700 pt-2 border-t border-brand-200/50 space-y-1">
-                  <p id="flashcard-explanation"><strong>Explicación:</strong> Indica cuántas soluciones reales existen:</p>
-                  <p>• Si > 0: 2 soluciones reales distintas.</p>
-                  <p>• Si = 0: 1 solución real (doble).</p>
-                  <p>• Si < 0: No existen soluciones reales.</p>
+                  <p id="flashcard-explanation">
+                    ${
+                      selectedTopic.subject.includes('Lengua')
+                        ? currentGrade === '1eso'
+                          ? 'En 1º de ESO se identifica "puntual a la estación" en bloque como Complemento Verbal (CV) sin exigir clasificar subtipos.'
+                          : 'La prueba de concordancia: "puntual" varía con el sujeto ("Las locomotoras llegaron puntuales"), rasgo exclusivo del CPred.'
+                        : 'Comprender la causa fundamental y la consecuencia lógica del concepto.'
+                    }
+                  </p>
                 </div>
 
                 <button id="btn-toggle-answer" class="w-full py-1.5 px-3 rounded-xl text-xs font-semibold bg-white border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors">
@@ -243,9 +284,9 @@ export function renderStudyView(container: HTMLElement): void {
               </div>
             </div>
 
-            <!-- Card 2: Conceptos Clave del Tema -->
+            <!-- Card 2: Conceptos Clave del Tema (Línea Base) -->
             <div class="glass-panel p-5 rounded-3xl border border-slate-200 space-y-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('study.conceptsTitle')}</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">${t('study.baselineConcepts')}</span>
               <ul class="space-y-2 text-xs">
                 ${selectedTopic.keyConcepts.map((concept, i) => `
                   <li class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
@@ -275,7 +316,20 @@ export function renderStudyView(container: HTMLElement): void {
       const found = availableTopics.find(t => t.id === topicId);
       if (found) {
         selectedTopic = found;
-        messages = [getInitialMessage(found)];
+        availableActivities = promptOrchestratorService.getActivitiesForTopic(found.id);
+        selectedActivity = availableActivities[0];
+        messages = [getInitialMessage(found, selectedActivity)];
+        render();
+      }
+    });
+
+    // Activity / Variation selector
+    container.querySelector('#select-activity')?.addEventListener('change', (e) => {
+      const actId = (e.target as HTMLSelectElement).value;
+      const act = availableActivities.find(a => a.id === actId);
+      if (act) {
+        selectedActivity = act;
+        messages = [getInitialMessage(selectedTopic, act)];
         render();
       }
     });
@@ -286,33 +340,24 @@ export function renderStudyView(container: HTMLElement): void {
       ans?.classList.toggle('hidden');
     });
 
-    // View Socratic Prompt modal (Section Prompt)
-    container.querySelector('#btn-view-socratic-prompt')?.addEventListener('click', () => {
+    // Grafo de Prompts Viewer (4 Capas completas)
+    container.querySelector('#btn-view-prompt-graph')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
-      renderPromptViewerModal(
-        modalRoot,
-        'Prompt Estático: Tutor Socrático (socratic_tutor.md)',
-        STATIC_PROMPTS.socratic,
-        { 
-          subtitle: 'Prompt Transversal de Sección (Metodología Socrática y Guardrails Transversales)',
-          onClose: () => { modalRoot.innerHTML = ''; } 
-        }
-      );
-    });
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'socratic',
+        gradeKey: currentGrade,
+        subject: selectedTopic.subject,
+        topicId: selectedTopic.id,
+        activityId: selectedActivity?.id
+      });
 
-    // View Curricular Prompt modal (Institutional Educational API)
-    container.querySelector('#btn-view-socratic-curricular')?.addEventListener('click', async () => {
-      const modalRoot = document.getElementById('modal-root') || document.body;
-      const curricularData = await educationalApiService.getDepartmentalPrompt(selectedTopic.subject, currentGrade);
       renderPromptViewerModal(
         modalRoot,
-        curricularData.subject,
-        curricularData.promptMarkdown,
+        t('study.modalSocraticTitle'),
+        assembled.systemInstruction,
         {
-          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
-          institution: curricularData.institution,
-          sourceApi: curricularData.sourceApi,
-          gradeLevel: curricularData.gradeLevel,
+          assembledPrompt: assembled,
+          subtitle: t('study.modalSocraticSubtitle', { subject: selectedTopic.subject, topic: selectedTopic.name }),
           onClose: () => { modalRoot.innerHTML = ''; }
         }
       );
@@ -321,11 +366,19 @@ export function renderStudyView(container: HTMLElement): void {
     // View Recall Prompt modal
     container.querySelector('#btn-view-recall-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'recall',
+        gradeKey: currentGrade,
+        subject: selectedTopic.subject,
+        topicId: selectedTopic.id
+      });
+
       renderPromptViewerModal(
         modalRoot,
         'Prompt Estático: Generador de Active Recall (active_recall_generator.md)',
         STATIC_PROMPTS.recall,
         { 
+          assembledPrompt: assembled,
           subtitle: 'Prompt Transversal de Sección (Generación de Flashcards Conceptuales)',
           onClose: () => { modalRoot.innerHTML = ''; } 
         }
@@ -430,8 +483,9 @@ export function renderStudyView(container: HTMLElement): void {
     const response = await aiClientService.generateSocraticResponse(
       text,
       selectedTopic.subject,
-      selectedTopic.name,
-      messages
+      selectedTopic.id,
+      messages,
+      selectedActivity?.id
     );
 
     messages.push(response);

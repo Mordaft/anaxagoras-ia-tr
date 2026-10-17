@@ -1,8 +1,9 @@
 import { db, ensureGradeSpecificAgendaBlocks } from '../../services/storage';
 import { googleCalendarService } from '../../services/google-calendar';
-import { aiClientService, STATIC_PROMPTS } from '../../services/ai-client';
+import { aiClientService } from '../../services/ai-client';
 import { googleAuthService } from '../../services/google-auth';
 import { educationalApiService } from '../../services/educational-api';
+import { promptOrchestratorService } from '../../services/prompt-orchestrator';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { renderPlanificationModal } from '../modals/planification-modal';
 import { t } from '../../services/i18n';
@@ -182,13 +183,13 @@ export function renderAgendaView(container: HTMLElement): void {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="btn-view-agenda-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Prompt de Sección: Planificador de Agenda">
+            <button id="btn-view-agenda-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('agenda.tooltipPromptPlanner')}">
               <span>📄</span>
-              <span>Prompt Agenda</span>
+              <span>${t('agenda.btnPromptPlanner')}</span>
             </button>
-            <button id="btn-view-agenda-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="Ver Directriz Curricular Departamental provista por la API educativa">
+            <button id="btn-view-agenda-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('agenda.tooltipCurricularDirective')}">
               <span>🏛️</span>
-              <span>Directriz API Educativa</span>
+              <span>${t('agenda.btnCurricularDirective')}</span>
             </button>
             <button id="btn-ai-plan" class="px-3.5 py-2 rounded-2xl bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 text-xs font-bold transition-all flex items-center gap-1.5">
               <span>🤖</span>
@@ -473,15 +474,21 @@ export function renderAgendaView(container: HTMLElement): void {
       }
     });
 
-    // Prompt Viewer modal trigger (Section Prompt)
+    // Prompt Viewer modal trigger (Section Prompt & Multi-Layer Graph)
     container.querySelector('#btn-view-agenda-prompt')?.addEventListener('click', () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'agenda',
+        gradeKey: currentGrade,
+        subject: 'Lengua Castellana y Literatura'
+      });
       renderPromptViewerModal(
         modalRoot, 
-        'Prompt Estático: Planificador de Agenda (agenda_planner.md)', 
-        STATIC_PROMPTS.agenda, 
+        t('agenda.modalPlannerTitle'), 
+        assembled.systemInstruction, 
         { 
-          subtitle: 'Prompt Transversal de Sección (Metodología Spaced Repetition)',
+          assembledPrompt: assembled,
+          subtitle: t('agenda.modalPlannerSubtitle'),
           onClose: () => { modalRoot.innerHTML = ''; } 
         }
       );
@@ -490,16 +497,21 @@ export function renderAgendaView(container: HTMLElement): void {
     // Curricular Prompt modal trigger (Institutional Educational API)
     container.querySelector('#btn-view-agenda-curricular')?.addEventListener('click', async () => {
       const modalRoot = document.getElementById('modal-root') || document.body;
-      const curricularData = await educationalApiService.getDepartmentalPrompt('Lengua Castellana y Literatura', currentGrade);
+      const assembled = promptOrchestratorService.assemblePrompt({
+        role: 'agenda',
+        gradeKey: currentGrade,
+        subject: 'Lengua Castellana y Literatura'
+      });
       renderPromptViewerModal(
         modalRoot,
-        curricularData.subject,
-        curricularData.promptMarkdown,
+        assembled.layers.level2BaseTopic.title,
+        assembled.layers.level2BaseTopic.content,
         {
-          subtitle: `Directriz Curricular Departamental para ${curricularData.gradeLevel}`,
-          institution: curricularData.institution,
-          sourceApi: curricularData.sourceApi,
-          gradeLevel: curricularData.gradeLevel,
+          assembledPrompt: assembled,
+          subtitle: t('agenda.modalCurricularSubtitle', { grade: currentGrade === '2batx' ? '2º Bachillerato' : '1º de ESO' }),
+          institution: "Departament d'Educació de la Generalitat de Catalunya (Esfer@)",
+          sourceApi: `https://api.educacio.gencat.cat/v1/curriculum/guardrails?grade=${currentGrade}`,
+          gradeLevel: currentGrade === '2batx' ? '2º de Bachillerato' : '1º de ESO',
           onClose: () => { modalRoot.innerHTML = ''; }
         }
       );

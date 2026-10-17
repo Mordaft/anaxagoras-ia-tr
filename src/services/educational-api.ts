@@ -2,8 +2,7 @@ import type { StudentGrade } from '../types/auth';
 import type { StudyBlock, InstitutionalTaskProgression, EventType } from '../types/agenda';
 import { db } from './storage';
 
-import lengua1esoPrompt from '../prompts/curriculares/lengua_castellana_1eso.md?raw';
-import lengua2batxPrompt from '../prompts/curriculares/lengua_castellana_2batx.md?raw';
+import { promptOrchestratorService } from './prompt-orchestrator';
 
 export interface DepartmentalPromptResponse {
   subject: string;
@@ -297,56 +296,22 @@ export class EducationalApiService {
    */
   public async getDepartmentalPrompt(
     subject: string,
-    gradeKey: StudentGrade
+    gradeKey: StudentGrade,
+    topicKeyword = ''
   ): Promise<DepartmentalPromptResponse> {
     // Simulación de latencia de red de la API educativa
     await new Promise((resolve) => setTimeout(resolve, 80));
 
-    const isLengua = subject.toLowerCase().includes('lengua');
-
-    if (isLengua) {
-      if (gradeKey === '1eso') {
-        return {
-          subject: 'Lengua Castellana y Literatura',
-          gradeKey: '1eso',
-          gradeLevel: '1º de ESO (12 años)',
-          stageName: 'Operaciones Concretas / Transición (Piaget)',
-          promptMarkdown: lengua1esoPrompt,
-          institution: this.INSTITUTION_NAME,
-          sourceApi: `${this.API_ENDPOINT}?subject=lengua_castellana&grade=1eso`,
-          fetchedAt: new Date().toISOString()
-        };
-      } else {
-        return {
-          subject: 'Lengua Castellana y Literatura',
-          gradeKey: '2batx',
-          gradeLevel: '2º de Bachillerato (17-18 años)',
-          stageName: 'Operaciones Formales / Preuniversitario PAU (Piaget)',
-          promptMarkdown: lengua2batxPrompt,
-          institution: this.INSTITUTION_NAME,
-          sourceApi: `${this.API_ENDPOINT}?subject=lengua_castellana&grade=2batx`,
-          fetchedAt: new Date().toISOString()
-        };
-      }
-    }
-
-    // Directriz estándar por defecto para otras materias
-    const defaultMarkdown = `
-# 🏛️ Directriz Curricular: ${subject} (${gradeKey === '1eso' ? '1º de ESO' : '2º de Bachillerato'})
-*Fuente: ${this.INSTITUTION_NAME}*
-
-1. **Adaptación de Nivel:** Aplicar el nivel de abstracción correspondiente a ${gradeKey === '1eso' ? '1º de ESO (enfoque guiado y visual)' : '2º de Bachillerato (rigor preuniversitario)'}.
-2. **Guardrails Metodológicos:** Fomentar el descubrimiento autónomo y la resolución razonada.
-`.trim();
+    const topic = promptOrchestratorService.findTopicBySubjectOrKeyword(subject, gradeKey, topicKeyword);
 
     return {
-      subject,
+      subject: topic.subject,
       gradeKey,
       gradeLevel: gradeKey === '1eso' ? '1º de ESO (12 años)' : '2º de Bachillerato (17-18 años)',
-      stageName: gradeKey === '1eso' ? 'Operaciones Concretas' : 'Operaciones Formales',
-      promptMarkdown: defaultMarkdown,
+      stageName: gradeKey === '1eso' ? 'Operaciones Concretas / Transición (Piaget)' : 'Operaciones Formales / Preuniversitario PAU (Piaget)',
+      promptMarkdown: topic.markdownContent || '',
       institution: this.INSTITUTION_NAME,
-      sourceApi: `${this.API_ENDPOINT}?subject=${encodeURIComponent(subject)}&grade=${gradeKey}`,
+      sourceApi: `${this.API_ENDPOINT}?subject=${encodeURIComponent(topic.subject)}&grade=${gradeKey}&topic=${encodeURIComponent(topic.id)}`,
       fetchedAt: new Date().toISOString()
     };
   }
