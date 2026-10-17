@@ -70,15 +70,10 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
               </div>
 
               <!-- Grade Switcher for TR Live Defense -->
-              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <span>🎓</span>
-                    <span>Nivel Escolar (Demostración TR):</span>
-                  </span>
-                  <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
-                    ${auth.user.stageName || 'Piaget'}
-                  </span>
+              <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <span>🎓</span>
+                  <span>Nivel Escolar (Demostración TR):</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <button id="btn-modal-set-1eso" class="py-2 px-3 rounded-xl text-xs font-bold transition-all ${auth.user.gradeKey === '1eso' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'}">
@@ -88,11 +83,6 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
                     🟣 2º Bachillerato (17-18)
                   </button>
                 </div>
-                <p class="text-[11px] text-slate-500 leading-tight">
-                  ${auth.user.gradeKey === '1eso' 
-                    ? '• 1º de ESO: Operaciones Concretas. El complemento verbal se identifica en bloque sin exigir tipos.' 
-                    : '• 2º de Bachillerato: Operaciones Formales. Obligatorio indicar el tipo de complemento verbal (CPred vs CCL) y justificar con pruebas.'}
-                </p>
               </div>
 
               <!-- Connected Services Status -->
