@@ -36,6 +36,7 @@ export interface TopicContextDefinition {
   fileKey: string;
   keyConcepts: string[];
   markdownContent?: string;
+  pedagogicalNote?: string;
 }
 
 export interface ActivityDefinition {

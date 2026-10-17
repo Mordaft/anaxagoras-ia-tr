@@ -33,7 +33,8 @@ export class PromptOrchestratorService {
       subject: 'Lengua Castellana y Literatura',
       name: 'Sintaxis de la Oración Simple: Sujeto y Complemento Verbal',
       fileKey: 'nivel_2_centro_educativo/1eso/temas/lengua_sintaxis_oracion_simple.md',
-      keyConcepts: ['Sujeto y Predicado', 'Verbo', 'Complemento Verbal (en bloque)']
+      keyConcepts: ['Sujeto y Predicado', 'Verbo', 'Complemento Verbal (en bloque)'],
+      pedagogicalNote: 'Estadio de Operaciones Concretas (Piaget): Identificación visual y holística del Sujeto y el Complemento Verbal en bloque ("locomotora y vagones"), sin clasificaciones abstractas prematuras.'
     },
     {
       id: 'topic_naturales_1eso',
@@ -41,7 +42,8 @@ export class PromptOrchestratorService {
       subject: 'Ciencias Naturales',
       name: 'Ecosistemas y Cadenas Tróficas en el Bosque Mediterráneo',
       fileKey: 'nivel_2_centro_educativo/1eso/temas/naturales_ecosistemas_cadenas_troficas.md',
-      keyConcepts: ['Biotopo y Biocenosis', 'Niveles Tróficos', 'Equilibrio Ecológico']
+      keyConcepts: ['Biotopo y Biocenosis', 'Niveles Tróficos', 'Equilibrio Ecológico'],
+      pedagogicalNote: 'Modelado intuitivo y visual de las relaciones interespecíficas y flujo de materia/energía a partir de observaciones directas del bosque mediterráneo.'
     },
     {
       id: 'topic_mates_1eso',
@@ -49,7 +51,8 @@ export class PromptOrchestratorService {
       subject: 'Matemáticas',
       name: 'Fracciones y Operaciones Básicas en Problemas Cotidianos',
       fileKey: 'nivel_2_centro_educativo/1eso/temas/mates_fracciones_proporcionalidad.md',
-      keyConcepts: ['Fracciones Equivalentes', 'Común Denominador', 'Reparto Proporcional']
+      keyConcepts: ['Fracciones Equivalentes', 'Común Denominador', 'Reparto Proporcional'],
+      pedagogicalNote: 'Aproximación geométrica y tangible al concepto de parte-todo y proporcionalidad antes de la abstracción algorítmica formal.'
     },
     {
       id: 'topic_sociales_1eso',
@@ -57,7 +60,8 @@ export class PromptOrchestratorService {
       subject: 'Ciencias Sociales',
       name: 'Primeras Civilizaciones Fluviales: Mesopotamia y Egipto',
       fileKey: 'nivel_2_centro_educativo/1eso/temas/sociales_civilizaciones_fluviales.md',
-      keyConcepts: ['El Río como Motor', 'Sociedad Jerarquizada', 'Escritura Cuneiforme/Jeroglífica']
+      keyConcepts: ['El Río como Motor', 'Sociedad Jerarquizada', 'Escritura Cuneiforme/Jeroglífica'],
+      pedagogicalNote: 'Causalidad histórica fundamental: comprensión del condicionamiento geográfico en la aparición de los primeros estados y códigos normativos.'
     },
     {
       id: 'topic_tutoria_1eso',
@@ -65,7 +69,8 @@ export class PromptOrchestratorService {
       subject: 'Tutoría / Lectura',
       name: 'Comprensión Lectora y Deducción Léxica en Novela Juvenil',
       fileKey: 'nivel_2_centro_educativo/1eso/temas/tutoria_lectura_comprension.md',
-      keyConcepts: ['Estructura Narrativa', 'Vocabulario por Contexto', 'Paráfrasis']
+      keyConcepts: ['Estructura Narrativa', 'Vocabulario por Contexto', 'Paráfrasis'],
+      pedagogicalNote: 'Fomento del razonamiento inferencial y deducción léxica mediante el diálogo socrático guiado sin recurrir a definiciones pasivas.'
     },
 
     // === 2º de Bachillerato ===
@@ -75,7 +80,8 @@ export class PromptOrchestratorService {
       subject: 'Lengua Castellana y Literatura',
       name: 'Tipología y Pruebas de Complementos Verbales (PAU)',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/lengua_sintaxis_complementos_pau.md',
-      keyConcepts: ['CPredicativo (concordancia)', 'CRV vs CC', 'Pruebas sintácticas PAU']
+      keyConcepts: ['CPredicativo (concordancia)', 'CRV vs CC', 'Pruebas sintácticas PAU'],
+      pedagogicalNote: 'Estadio de Operaciones Formales e Hipotético-Deductivas: Rigor filológico con pruebas morfosintácticas estrictas (concordancia, conmutación) para las PAU.'
     },
     {
       id: 'topic_historia_2batx',
@@ -83,7 +89,8 @@ export class PromptOrchestratorService {
       subject: 'Historia de España',
       name: 'Crisis del Antiguo Régimen, Constitución de 1812 y Fernando VII',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/historia_crisis_antiguo_regimen.md',
-      keyConcepts: ['Cortes de Cádiz', 'Constitución de 1812', 'Manifiesto de los Persas']
+      keyConcepts: ['Cortes de Cádiz', 'Constitución de 1812', 'Manifiesto de los Persas'],
+      pedagogicalNote: 'Análisis historiográfico dialéctico: contraste de textos y decretos originales bajo los criterios de rigor conceptual de las pruebas PAU.'
     },
     {
       id: 'topic_mates_2batx',
@@ -91,7 +98,8 @@ export class PromptOrchestratorService {
       subject: 'Matemáticas II',
       name: 'Sistemas de Ecuaciones Lineales y Matrices con Parámetros (PAU)',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/mates_sistemas_cramer_rouche.md',
-      keyConcepts: ['Rouché-Frobenius', 'Regla de Cramer', 'Discusión con Parámetro k']
+      keyConcepts: ['Rouché-Frobenius', 'Regla de Cramer', 'Discusión con Parámetro k'],
+      pedagogicalNote: 'Razonamiento deductivo y generalización formal de rangos matriciales ante sistemas indeterminados con parámetros.'
     },
     {
       id: 'topic_filosofia_2batx',
@@ -99,7 +107,8 @@ export class PromptOrchestratorService {
       subject: 'Filosofía',
       name: 'Teoría del Conocimiento: Platón vs Descartes (PAU)',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/filosofia_teoria_conocimiento_pau.md',
-      keyConcepts: ['Mito de la Caverna', 'Duda Metódica y Cogito', 'Ideas Innatas']
+      keyConcepts: ['Mito de la Caverna', 'Duda Metódica y Cogito', 'Ideas Innatas'],
+      pedagogicalNote: 'Pensamiento crítico y dialéctica epistemológica: formulación de tesis, antítesis y justificación argumentativa estructurada.'
     },
     {
       id: 'topic_quimica_2batx',
@@ -107,7 +116,8 @@ export class PromptOrchestratorService {
       subject: 'Química',
       name: 'Termodinámica Química y Principio de Le Chatelier (PAU)',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/quimica_termodinamica_equilibrio.md',
-      keyConcepts: ['Entalpía y Entropía', 'Equilibrio Químico Kc/Kp', 'Le Chatelier']
+      keyConcepts: ['Entalpía y Entropía', 'Equilibrio Químico Kc/Kp', 'Le Chatelier'],
+      pedagogicalNote: 'Predicción fisicoquímica cuantitativa y cualitativa del equilibrio ante perturbaciones en reactores cerrados.'
     },
     {
       id: 'topic_tecnologia_2batx',
@@ -115,7 +125,8 @@ export class PromptOrchestratorService {
       subject: 'Ciencias y Tecnología',
       name: 'Transición Energética y Viabilidad de Eólica Marina en el Mediterráneo',
       fileKey: 'nivel_2_centro_educativo/2batx/temas/tecnologia_energias_renovables.md',
-      keyConcepts: ['Eólica Marina Flotante', 'LCOE y Descarbonización', 'Impacto Ambiental']
+      keyConcepts: ['Eólica Marina Flotante', 'LCOE y Descarbonización', 'Impacto Ambiental'],
+      pedagogicalNote: 'Pensamiento de ingeniería y sostenibilidad: análisis multidimensional de viabilidad técnica, energética y ambiental.'
     }
   ];
 
