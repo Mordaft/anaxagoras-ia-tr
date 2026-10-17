@@ -7,12 +7,11 @@ import { renderNavbar } from './components/layout/navbar';
 import { renderTabs, type ActiveTab } from './components/layout/tabs';
 import { renderAISettingsModal } from './components/modals/ai-settings-modal';
 import { renderAuthModal } from './components/modals/auth-modal';
-import { renderAgendaView } from './components/views/agenda-view';
 import { renderStudyView } from './components/views/study-view';
 import { renderTasksView } from './components/views/tasks-view';
 
 class AnaxagorasApp {
-  private activeTab: ActiveTab = 'agenda';
+  private activeTab: ActiveTab = 'study';
   private navbarRoot: HTMLElement;
   private tabsRoot: HTMLElement;
   private viewContainer: HTMLElement;
@@ -81,9 +80,6 @@ class AnaxagorasApp {
   private switchView(tab: ActiveTab): void {
     this.viewContainer.innerHTML = '';
     switch (tab) {
-      case 'agenda':
-        renderAgendaView(this.viewContainer);
-        break;
       case 'study':
         renderStudyView(this.viewContainer);
         break;

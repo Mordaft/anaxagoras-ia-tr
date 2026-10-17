@@ -1,6 +1,6 @@
 import { t } from '../../services/i18n';
 
-export type ActiveTab = 'agenda' | 'study' | 'tasks';
+export type ActiveTab = 'study' | 'tasks';
 
 export interface TabsCallbacks {
   onTabChange: (tab: ActiveTab) => void;
@@ -14,20 +14,7 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
         <!-- Tab Navigation Buttons -->
         <div class="flex space-x-1 sm:space-x-3 -mb-px">
           
-          <!-- Tab 1: Agenda -->
-          <button data-tab="agenda" class="tab-btn group relative flex items-center gap-2.5 py-3 px-3 sm:px-5 font-medium text-sm transition-all border-b-2 ${
-            activeTab === 'agenda'
-              ? 'border-brand-600 text-brand-600 font-semibold'
-              : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
-          }">
-            <span class="text-base sm:text-lg">📅</span>
-            <span>${t('tabs.agenda')}</span>
-            <span class="ml-1 px-1.5 py-0.5 text-[11px] font-bold rounded-full ${
-              activeTab === 'agenda' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-600'
-            }">3</span>
-          </button>
-
-          <!-- Tab 2: Estudio / Repaso -->
+          <!-- Tab 1: Estudio / Repaso -->
           <button data-tab="study" class="tab-btn group relative flex items-center gap-2.5 py-3 px-3 sm:px-5 font-medium text-sm transition-all border-b-2 ${
             activeTab === 'study'
               ? 'border-brand-600 text-brand-600 font-semibold'
@@ -40,7 +27,7 @@ export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbac
             </span>
           </button>
 
-          <!-- Tab 3: Trabajos -->
+          <!-- Tab 2: Trabajos -->
           <button data-tab="tasks" class="tab-btn group relative flex items-center gap-2.5 py-3 px-3 sm:px-5 font-medium text-sm transition-all border-b-2 ${
             activeTab === 'tasks'
               ? 'border-brand-600 text-brand-600 font-semibold'
