@@ -155,18 +155,18 @@ export class EducationalApiService {
     },
     {
       gradeKey: '2batx',
-      triggerKeywords: ['matrices', 'determinantes', 'cramer', 'algebra'],
+      triggerKeywords: ['derivadas', 'derivada', 'tangente', 'optimizacion', 'optimización', 'calculo', 'cálculo', 'extremos'],
       nextBlock: () => ({
-        title: 'Discusión de Sistemas con Parámetros: Teorema de Rouché-Frobenius (PAU)',
+        title: 'Optimización y Extremos Relativos: Aplicación de Derivadas (PAU)',
         subject: 'Matemáticas II',
         type: 'study_session',
         durationMinutes: 55,
         daysAhead: 2,
         startTime: '16:30',
-        notes: 'Resolución de problemas de selectividad explicados en clase. Discusión para k = 1 y k = -2.',
-        teacherNotes: 'Ejercicios de la pizarra trabajados hoy en el aula. Consolidar el cálculo de determinantes 3x3.',
+        notes: 'Resolución de problemas de optimización con funciones polinómicas y racionales de exámenes PAU.',
+        teacherNotes: 'Ejercicios de cálculo de máximos y mínimos absolutos en intervalos cerrados trabajados hoy en clase.',
         reason: 'topic_completed',
-        notification: 'El profesor de Matemáticas II ha agendado problemas de Selectividad para afianzar la clase de hoy.'
+        notification: 'El profesor de Matemáticas II ha programado ejercicios de optimización tras dominar la recta tangente.'
       })
     },
     {

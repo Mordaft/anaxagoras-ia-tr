@@ -98,10 +98,10 @@ export class PromptOrchestratorService {
       id: 'topic_mates_2batx',
       gradeKey: '2batx',
       subject: 'Matemáticas II',
-      name: 'Sistemas de Ecuaciones Lineales y Matrices con Parámetros (PAU)',
-      fileKey: 'nivel_2_centro_educativo/2batx/temas/mates_sistemas_cramer_rouche.md',
-      keyConcepts: ['Rouché-Frobenius', 'Regla de Cramer', 'Discusión con Parámetro k'],
-      pedagogicalNote: 'Razonamiento deductivo y generalización formal de rangos matriciales ante sistemas indeterminados con parámetros.'
+      name: 'Cálculo Diferencial: Derivadas, Recta Tangente y Optimización (PAU)',
+      fileKey: 'nivel_2_centro_educativo/2batx/temas/mates_derivadas_optimizacion.md',
+      keyConcepts: ['Reglas de Derivación', 'Ecuación de la Recta Tangente', 'Criterio de Primera y Segunda Derivada', 'Problemas de Optimización'],
+      pedagogicalNote: 'Estadio de Operaciones Formales e Hipotético-Deductivas: Rigor analítico en la interpretación geométrica de la derivada como pendiente, deducción formal de extremos y modelización de problemas de optimización para las PAU.'
     },
     {
       id: 'topic_filosofia_2batx',
@@ -278,10 +278,10 @@ export class PromptOrchestratorService {
       gradeKey: '2batx',
       subject: 'Matemáticas II',
       order: 1,
-      title: 'Discusión de Sistema con Parámetro k (Rouché-Frobenius)',
-      sentenceOrCase: 'Discutir y resolver para SCI el sistema 3x3 en función de k.',
-      variationType: 'Problema Oficial PAU de Álgebra Matricial',
-      fileKey: 'nivel_2_centro_educativo/2batx/actividades/mates_act_discusion_parametro_k.md'
+      title: 'Recta Tangente y Optimización con Derivadas (PAU)',
+      sentenceOrCase: 'Calcular la recta tangente a f(x) = x³ - 3x² + 2 en x = 1 y justificar extremos relativos mediante f\'\'(x).',
+      variationType: 'Problema Oficial PAU de Análisis y Cálculo Diferencial',
+      fileKey: 'nivel_2_centro_educativo/2batx/actividades/mates_act_derivadas_optimizacion.md'
     },
     {
       id: 'act_filosofia_2batx_1',

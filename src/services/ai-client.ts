@@ -474,7 +474,7 @@ ${userInstruction ? `MENSAJE DEL ALUMNO: "${userInstruction}"` : '(El alumno abr
       return [
         {
           title: mentionsMates || isPostponing
-            ? 'Matemáticas II: Discusión de Sistemas de Cramer con Parámetro'
+            ? 'Matemáticas II: Derivadas, Recta Tangente y Optimización (PAU)'
             : 'Filosofía: Cuadro Comparativo Platón vs Descartes (PAU)',
           subject: mentionsMates || isPostponing ? 'Matemáticas II' : 'Filosofía',
           date: isPostponing ? tomorrow : today,
@@ -702,6 +702,39 @@ ${userInstruction ? `MENSAJE DEL ALUMNO: "${userInstruction}"` : '(El alumno abr
             '¿Qué diferencia hay entre CPred y Atributo?'
           ];
         }
+      }
+    } else if (
+      (subject.toLowerCase().includes('matemática') || subject.toLowerCase().includes('mates') || topic.toLowerCase().includes('derivada')) &&
+      gradeKey === '2batx'
+    ) {
+      const studentMetMatesCriteria =
+        text.includes('3x^2') ||
+        text.includes('3x²') ||
+        text.includes('-3') ||
+        text.includes('tangente') ||
+        text.includes('segunda derivada') ||
+        text.includes('mínimo') ||
+        text.includes('minimo') ||
+        text.includes('máximo') ||
+        text.includes('maximo') ||
+        isCompletionRequest;
+
+      if (studentMetMatesCriteria) {
+        reply = `¡Impecable deducción matemática, Álvaro! 📐🎓 Has completado con máximo rigor el análisis de cálculo diferencial exigido en las PAU:\n\n1. **Función derivada:** $f'(x) = 3x^2 - 6x$.\n2. **Pendiente y Recta Tangente en $x=1$:** $f(1) = 0$, $m = f'(1) = -3 \\implies y = -3x + 3$.\n3. **Puntos críticos:** $f'(x) = 0 \\implies x = 0$ y $x = 2$.\n4. **Criterio de la 2ª derivada:** $f''(x) = 6x - 6$. En $x=0$, $f''(0) = -6 < 0$ (Máximo local en $(0,2)$); en $x=2$, $f''(2) = 6 > 0$ (Mínimo local en $(2,-2)$).\n\n¡Has demostrado dominio formal y analítico de las derivadas preuniversitarias! Cerramos con éxito la sesión de hoy. 🎉\n\n[TAREA_COMPLETADA: ${activityId || 'act_mates_2batx_1'}]`;
+      } else if (isDirectSolutionRequest) {
+        reply = `¡Álvaro, en la PAU cada paso de derivación debe justificarse! 💪\n\nEmpecemos por el principio: para la función $f(x) = x^3 - 3x^2 + 2$, ¿cuál es su derivada $f'(x)$ aplicando la regla de las potencias?`;
+        suggestions = [
+          'La derivada es f\'(x) = 3x² - 6x',
+          '¿Cómo derivo x³ y -3x²?',
+          '¿Cuánto vale f(1) y f\'(1)?'
+        ];
+      } else {
+        reply = `¡Hola, Álvaro! En 2º de Bachillerato abordamos el cálculo diferencial con rigor analítico. 📐📚\n\nEn la función $f(x) = x^3 - 3x^2 + 2$, para hallar la recta tangente en $x = 1$, necesitamos calcular el punto por el que pasa $(1, f(1))$ y la pendiente de la recta tangente $m = f'(1)$.\n\n¿Cuánto te da la derivada $f'(x)$ y qué valor toma en $x = 1$?`;
+        suggestions = [
+          'f\'(x) = 3x² - 6x, y f\'(1) = -3',
+          '¿Cuál es la fórmula punto-pendiente?',
+          '¿Cómo encuentro los máximos y mínimos?'
+        ];
       }
     } else if (isCompletionRequest) {
       reply = `¡Magnífico trabajo de asimilación! 🧠✨ Has revisado con éxito los conceptos clave de **${subject}** (${topic || 'tema curricular'}) demostrando una comprensión sólida y justificada.\n\nDamos por finalizada esta sesión de estudio y repaso para consolidar la memoria a largo plazo y evitar la sobrecarga cognitiva. ¡Enhorabuena por tu constancia! 🎉\n\n[TAREA_COMPLETADA: ${activityId || 'task_general'}]`;

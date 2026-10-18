@@ -117,6 +117,20 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
   const existing1eso = await db.studyBlocks.filter(b => b.gradeKey === '1eso').count();
   const existing2batx = await db.studyBlocks.filter(b => b.gradeKey === '2batx').count();
 
+  // Actualizar cualquier bloque heredado de Matrices/Cramer en 2º de Bachillerato a la nueva tarea de Derivadas
+  const legacyMatesBlocks = await db.studyBlocks
+    .filter(b => b.gradeKey === '2batx' && (b.title.includes('Matrices') || b.title.includes('Cramer')))
+    .toArray();
+  for (const b of legacyMatesBlocks) {
+    if (b.id) {
+      await db.studyBlocks.update(b.id, {
+        title: 'Matemáticas II: Derivadas, Recta Tangente y Optimización (PAU)',
+        teacherNotes: 'Práctica de selectividad asignada en clase para consolidar cálculo diferencial y aplicaciones de la derivada.',
+        notes: 'Cálculo de la recta tangente a f(x) en x=1 y justificación de extremos relativos mediante la segunda derivada.'
+      });
+    }
+  }
+
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const inTwoDays = new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0];
@@ -232,7 +246,7 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         syncedWithGoogle: false
       },
       {
-        title: 'Matemáticas II: Matrices, Determinantes y Sistemas de Cramer (PAU)',
+        title: 'Matemáticas II: Derivadas, Recta Tangente y Optimización (PAU)',
         subject: 'Matemáticas II',
         date: inTwoDays,
         startTime: '16:30',
@@ -241,8 +255,8 @@ export async function ensureGradeSpecificAgendaBlocks(): Promise<void> {
         completed: false,
         gradeKey: '2batx',
         origin: 'institutional',
-        teacherNotes: 'Práctica de selectividad asignada en clase para consolidar cálculo matricial.',
-        notes: 'Resolución de problemas de selectividad con discusión según parámetro k.',
+        teacherNotes: 'Práctica de selectividad asignada en clase para consolidar cálculo diferencial y aplicaciones de la derivada.',
+        notes: 'Cálculo de la recta tangente a f(x) en x=1 y justificación de extremos relativos mediante la segunda derivada.',
         syncedWithGoogle: true,
         googleEventId: 'gcal_batx_mates'
       },

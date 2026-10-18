@@ -48,3 +48,9 @@ Registro cronológico de los avances, decisiones y construcciones del proyecto.
      - Inyecta dinámicamente en tiempo de ejecución las directrices curriculares y rúbricas correspondientes al estudiante conectado en las llamadas al motor de IA (`aiClientService`).
      - Visores transparentes en Agenda, Estudio y Trabajos mediante el botón `🏛️ Directriz API Educativa`, permitiendo a docentes y tribunales auditar qué directriz institucional rige la sesión.
 
+### Iteración 07: Actualización Curricular de Matemáticas II — Cálculo Diferencial (Derivadas y Optimización PAU)
+- **Objetivos y Entregables:**
+  1. **Línea Base Temática y Actividad Curricular:** Sustitución de la unidad de álgebra matricial por la unidad de **Cálculo Diferencial: Derivadas, Recta Tangente y Optimización (PAU)** (`mates_derivadas_optimizacion.md` y `mates_act_derivadas_optimizacion.md`).
+  2. **Planificación y Agenda Escolar:** Actualización del bloque de estudio de Matemáticas II en la agenda de 2º de Bachillerato a *"Matemáticas II: Derivadas, Recta Tangente y Optimización (PAU)"*, con migración reactiva de bloques legados en IndexedDB.
+  3. **Tutor Socrático y Active Recall:** Adaptación pedagógica del tutor socrático para guiar paso a paso en la obtención de $f'(x)$, cálculo de la pendiente de la recta tangente $m = f'(x_0)$ y clasificación de extremos mediante el criterio de la segunda derivada $f''(x)$, junto con tarjeta de autoevaluación conceptual.
+  4. **Progresión Colaborativa (API Educativa Mock):** Actualización de disparadores curriculares hacia la unidad de optimización y extremos relativos ante la superación del bloque de derivadas.

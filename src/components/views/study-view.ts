@@ -102,6 +102,13 @@ function getInitialMessage(topic: TopicContextDefinition, activity?: ActivityDef
         '¿Cómo distingo un CPred de un Atributo?'
       ];
     }
+  } else if ((topic.id === 'topic_mates_2batx' || topic.subject.includes('Matemática')) && isBatx) {
+    content = `¡Hola, Álvaro! Soy tu tutor socrático en **Matemáticas II (2º de Bachillerato - Preparación PAU)**. 📐🎓\n\nAbordamos el bloque de análisis y cálculo diferencial con la función $f(x) = x^3 - 3x^2 + 2$.\n\nPara hallar la recta tangente a la curva en $x = 1$, ¿qué dos valores necesitamos calcular primero y cómo se relacionan con la derivada?`;
+    suggestedPrompts = [
+      'Necesitamos el punto f(1) y la pendiente f\'(1)',
+      '¿Cómo calculo la derivada f\'(x)?',
+      '¿Cuál es la fórmula punto-pendiente?'
+    ];
   }
 
   return {
@@ -127,6 +134,12 @@ function getDefaultFlashcardData(topic: TopicContextDefinition, currentGrade: st
         explanation: 'La prueba de concordancia: "puntual" varía con el sujeto ("Las locomotoras llegaron puntuales"), rasgo exclusivo del CPred.'
       };
     }
+  }
+  if (topic.id === 'topic_mates_2batx' || (topic.subject.includes('Matemática') && currentGrade === '2batx')) {
+    return {
+      concept: 'En 2º de Bachillerato, ¿cuál es el significado geométrico de la derivada f\'(a) y qué condición de la 2ª derivada determina un mínimo?',
+      explanation: 'f\'(a) es la pendiente de la recta tangente a la curva en x=a. Para un mínimo local, f\'(a)=0 y f\'\'(a) > 0 (curvatura hacia arriba).'
+    };
   }
   return {
     concept: `¿Cómo definirías la idea clave o causa fundamental de ${topic.name}?`,
@@ -165,11 +178,13 @@ export function renderStudyView(container: HTMLElement): void {
       }
     }
 
-    // Asegurar que cada tema tiene una sesión en memoria
+    // Asegurar que cada tema tiene una sesión en memoria y refrescar si cambió el contenido curricular
     availableTopics.forEach(topic => {
-      if (!taskSessions.has(topic.id)) {
-        const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
-        const defaultCard = getDefaultFlashcardData(topic, currentGrade);
+      const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
+      const defaultCard = getDefaultFlashcardData(topic, currentGrade);
+      const session = taskSessions.get(topic.id);
+
+      if (!session) {
         const newSession: StudyTaskSession = {
           topicId: topic.id,
           status: 'pending',
@@ -180,6 +195,18 @@ export function renderStudyView(container: HTMLElement): void {
           flashcardRevealed: false
         };
         taskSessions.set(topic.id, newSession);
+      } else if (
+        topic.id === 'topic_mates_2batx' && 
+        (session.flashcardConcept?.includes('Sistemas') || 
+         session.flashcardConcept?.includes('Matrices') || 
+         session.selectedActivityId?.includes('parametro_k'))
+      ) {
+        session.selectedActivityId = activities[0]?.id || '';
+        session.flashcardConcept = defaultCard.concept;
+        session.flashcardExplanation = defaultCard.explanation;
+        session.messages = [];
+        session.status = 'pending';
+        saveStudyTaskSessionToDb(session);
       }
     });
 
