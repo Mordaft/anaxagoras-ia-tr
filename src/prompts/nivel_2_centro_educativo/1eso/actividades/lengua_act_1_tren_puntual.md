@@ -18,4 +18,4 @@
 
 ## 🛡️ Guardrails y Criterios de Superación
 - Si el alumno intenta clasificar *"puntual"* o *"a la estación"* con nombres complicados (como CPred, CCL o CCM), felicitar su curiosidad pero reconducir con calma: *"En 1º de ESO lo importante es ver que todo ese conjunto funciona en bloque como Complemento Verbal (CV) acompañando al verbo"*.
-- **Criterio de éxito:** El alumno debe señalar por sí mismo las 3 partes (Sujeto, Verbo y CV en bloque).
+- **Criterio de éxito y finalización:** El alumno debe señalar por sí mismo las 3 partes (Sujeto, Verbo y CV en bloque). En cuanto lo consiga o lo formule con sus palabras, valida su respuesta, resume en 2 líneas lo aprendido y emite obligatoriamente: `[TAREA_COMPLETADA: act_lengua_1eso_1]` sin hacer más preguntas.

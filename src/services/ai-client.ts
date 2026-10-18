@@ -206,23 +206,41 @@ export class AIClientService {
     ]);
 
     if (llmOutput) {
+      const completionMatch = llmOutput.match(/\[TAREA_COMPLETADA(?::\s*([a-zA-Z0-9_\-]+))?\]/i);
+      const isCompleted = !!completionMatch;
+      const cleanedContent = llmOutput.replace(/\[TAREA_COMPLETADA(?::\s*([a-zA-Z0-9_\-]+))?\]/gi, '').trim();
+
       return {
         id: `msg_${Date.now()}`,
         role: 'tutor',
-        content: llmOutput,
+        content: cleanedContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSocraticQuestion: true,
-        suggestedPrompts: [
-          '¿Cómo relaciono esto con la teoría?',
-          'Quiero resolver el siguiente paso',
-          'Dame un ejemplo similar'
-        ]
+        isSocraticQuestion: !isCompleted,
+        isTaskCompleted: isCompleted,
+        suggestedPrompts: isCompleted
+          ? [
+              '🎉 ¡Objetivo pedagógico conseguido!',
+              'Avanzar a la siguiente variación',
+              'Volver a la Agenda'
+            ]
+          : [
+              '¿Cómo relaciono esto con la teoría?',
+              'Quiero resolver el siguiente paso',
+              'Dame un ejemplo similar'
+            ]
       };
     }
 
     // Motor integrado de reserva pedagógica adaptado al grado del alumno
     await new Promise(resolve => setTimeout(resolve, 500));
-    return this.createSimulatedSocraticResponse(studentMessage, subject, topic, gradeKey);
+    return this.createSimulatedSocraticResponse(
+      studentMessage,
+      subject,
+      topic,
+      gradeKey,
+      activityId,
+      history
+    );
   }
 
   /**
@@ -605,46 +623,13 @@ ${userInstruction ? `MENSAJE DEL ALUMNO: "${userInstruction}"` : '(El alumno abr
     studentMessage: string,
     subject: string,
     topic = '',
-    gradeKey: '1eso' | '2batx' = '1eso'
+    gradeKey: '1eso' | '2batx' = '1eso',
+    activityId?: string,
+    history?: ChatMessage[]
   ): ChatMessage {
     const text = studentMessage.toLowerCase();
     let reply = '';
     let suggestions: string[] = [];
-
-    // Caso de estudio específico del TR: Lengua Castellana / Análisis Sintáctico
-    if (subject.toLowerCase().includes('lengua') || topic.toLowerCase().includes('oraci') || topic.toLowerCase().includes('sintaxis')) {
-      if (gradeKey === '1eso') {
-        reply = `¡Hola Marc! En 1º de ESO lo importante es entender la estructura básica sin liarnos con nombres difíciles. 🚂✨\n\nEn la oración *"El tren llegó puntual a la estación"*, primero encontramos el verbo (*llegó*) y quién realiza la acción (*El tren*, que es el Sujeto). Todas las palabras que acompañan al verbo (*"puntual a la estación"*) las identificamos como **Complemento Verbal (CV)** en bloque.\n\n¿Qué información nos aporta este complemento verbal sobre cómo y hacia dónde se mueve el tren?`;
-        suggestions = [
-          'Aporta información del modo y el lugar del viaje',
-          '¿Por qué en 1º de ESO no distinguimos subtipos?',
-          '¿Cómo encuentro el sujeto si va al final?'
-        ];
-        return {
-          id: `msg_${Date.now()}`,
-          role: 'tutor',
-          content: reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isSocraticQuestion: true,
-          suggestedPrompts: suggestions
-        };
-      } else {
-        reply = `¡Hola Álvaro! En 2º de Bachillerato abordamos el análisis sintáctico con rigor preuniversitario (PAU). 🎓📚\n\nEn la oración *"El tren llegó puntual a la estación"*, no basta con señalar un complemento verbal global: debemos clasificar cada elemento con exactitud gramatical.\n\nFíjate en *"puntual"*: ¿es un adjetivo o un adverbio? Si cambiamos el sujeto por *"Las locomotoras"*, ¿qué le ocurre a *"puntual"*? ¿Qué prueba sintáctica formal demuestra que es un **Complemento Predicativo (CPred)** y no un CC de Modo?`;
-        suggestions = [
-          'Concuerda con el sujeto ("llegaron puntuales"), es CPred',
-          '¿Y qué función sintáctica tiene "a la estación"?',
-          '¿Qué diferencia hay entre CPred y Atributo?'
-        ];
-        return {
-          id: `msg_${Date.now()}`,
-          role: 'tutor',
-          content: reply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isSocraticQuestion: true,
-          suggestedPrompts: suggestions
-        };
-      }
-    }
 
     const isDirectSolutionRequest = 
       text.includes('dame la respuesta') || 
@@ -655,28 +640,90 @@ ${userInstruction ? `MENSAJE DEL ALUMNO: "${userInstruction}"` : '(El alumno abr
       text.includes('escribe el texto') ||
       text.includes('dime el resultado');
 
-    if (isDirectSolutionRequest) {
-      reply = `¡Me encantaría ahorrarte tiempo, pero si te doy la respuesta directa te quitaría la oportunidad de entrenar tu mente para el examen! 💪
+    const isCompletionRequest =
+      text.includes('termin') || 
+      text.includes('listo') || 
+      text.includes('ya está') || 
+      text.includes('completad') || 
+      text.includes('entendido todo') || 
+      text.includes('ya lo sé') ||
+      text.includes('ya lo entiendo');
 
-Vamos a descubrirlo paso a paso. Cuéntame: **¿Qué datos conocidos nos da el enunciado y cuál es la incógnita que nos piden averiguar?**`;
+    // Caso de estudio curricular: Lengua Castellana / Sintaxis
+    if (subject.toLowerCase().includes('lengua') || topic.toLowerCase().includes('oraci') || topic.toLowerCase().includes('sintaxis')) {
+      if (gradeKey === '1eso') {
+        const studentMetCriteria = 
+          text.includes('modo') || 
+          text.includes('lugar') || 
+          text.includes('tren') || 
+          text.includes('sujeto') || 
+          text.includes('complemento verbal') || 
+          text.includes('cv') || 
+          text.includes('alarma') || 
+          text.includes('exploradores') ||
+          text.includes('estación') ||
+          isCompletionRequest;
+
+        if (studentMetCriteria) {
+          reply = `¡Brillante deducción, Marc! 🎯 Has completado todos los objetivos didácticos exigidos en este nivel de 1º de ESO:\n\n1. **Sujeto:** *"El tren"* (concuerda con el verbo).\n2. **Verbo:** *"llegó"* (núcleo del predicado).\n3. **Complemento Verbal (CV) en bloque:** *"puntual a la estación"*, aportando información sobre cómo y hacia dónde se produce la acción sin necesidad de clasificaciones abstractas prematuras.\n\n¡Has alcanzado la meta pedagógica de esta tarea con total rigor y autonomía! Tómate un merecido descanso o pasa a la siguiente variación cuando te sientas preparado. 💪\n\n[TAREA_COMPLETADA: ${activityId || 'act_lengua_1eso_1'}]`;
+        } else if (isDirectSolutionRequest) {
+          reply = `¡Me encantaría ahorrarte tiempo Marc, pero si te doy el resultado te quitaría la oportunidad de entrenar tu mente! 💪\n\nVamos a descubrirlo paso a paso. En *"El tren llegó puntual a la estación"*, ¿quién realiza la acción de llegar?`;
+          suggestions = ['El sujeto es "El tren"', '¿Cómo reconozco el sujeto?', '¿Cuál es el verbo?'];
+        } else {
+          reply = `¡Hola Marc! En 1º de ESO lo importante es entender la estructura básica sin liarnos con nombres difíciles. 🚂✨\n\nEn la oración *"El tren llegó puntual a la estación"*, primero encontramos el verbo (*llegó*) y quién realiza la acción (*El tren*, que es el Sujeto). Todas las palabras que acompañan al verbo (*"puntual a la estación"*) las identificamos como **Complemento Verbal (CV)** en bloque.\n\n¿Qué información nos aporta este complemento verbal sobre cómo y hacia dónde se mueve el tren?`;
+          suggestions = [
+            'Aporta información del modo y el lugar del viaje',
+            'El sujeto es "El tren" y el CV es "puntual a la estación"',
+            '¿Por qué en 1º de ESO no distinguimos subtipos?'
+          ];
+        }
+      } else {
+        // 2º de Bachillerato
+        const studentMetBatxCriteria =
+          text.includes('concordancia') ||
+          text.includes('plural') ||
+          text.includes('locomotoras') ||
+          text.includes('puntuales') ||
+          text.includes('cpred') ||
+          text.includes('predicativo') ||
+          text.includes('invariable') ||
+          isCompletionRequest;
+
+        if (studentMetBatxCriteria) {
+          reply = `¡Excelente rigor filológico, Álvaro! 🎓⚖️ Has demostrado formalmente la prueba morfosintáctica requerida en las PAU:\n\n1. **Prueba de concordancia obligatoria:** Al cambiar el sujeto a plural (*"Las locomotoras..."*), el adjetivo varía obligatoriamente (*"Las locomotoras llegaron **puntuales**"*).\n2. **Deducción formal:** Esa concordancia en género y número demuestra de forma irrefutable que **"puntual"** es un **Complemento Predicativo (CPred)** del sujeto, y no un CCM (los adverbios como *"puntualmente"* son siempre invariables).\n3. **Complemento circunstancial:** *"a la estación"* funciona como Sintagma Preposicional en función de Complemento Circunstancial de Lugar (CCL).\n\n¡Has alcanzado la meta pedagógica preuniversitaria para esta actividad con máxima solvencia! La sesión de estudio queda formalmente finalizada y consolidada. 👏\n\n[TAREA_COMPLETADA: ${activityId || 'act_lengua_2batx_1'}]`;
+        } else if (isDirectSolutionRequest) {
+          reply = `¡Álvaro, en 2º de Bachillerato la PAU exige justificación formal propia! 🎓\n\nPrueba a cambiar el sujeto *"El tren"* por el plural *"Las locomotoras"*. ¿Qué le ocurre al adjetivo *"puntual"*?`;
+          suggestions = ['Cambia a plural ("llegaron puntuales")', '¿Por qué un adjetivo no puede ser CCM?', 'Es una prueba de concordancia'];
+        } else {
+          reply = `¡Hola Álvaro! En 2º de Bachillerato abordamos el análisis sintáctico con rigor preuniversitario (PAU). 🎓📚\n\nEn la oración *"El tren llegó puntual a la estación"*, no basta con señalar un complemento verbal global: debemos clasificar cada elemento con exactitud gramatical.\n\nFíjate en *"puntual"*: ¿es un adjetivo o un adverbio? Si cambiamos el sujeto por *"Las locomotoras"*, ¿qué le ocurre a *"puntual"*? ¿Qué prueba sintáctica formal demuestra que es un **Complemento Predicativo (CPred)** y no un CC de Modo?`;
+          suggestions = [
+            'Concuerda con el sujeto ("llegaron puntuales"), es CPred',
+            '¿Y qué función sintáctica tiene "a la estación"?',
+            '¿Qué diferencia hay entre CPred y Atributo?'
+          ];
+        }
+      }
+    } else if (isCompletionRequest) {
+      reply = `¡Magnífico trabajo de asimilación! 🧠✨ Has revisado con éxito los conceptos clave de **${subject}** (${topic || 'tema curricular'}) demostrando una comprensión sólida y justificada.\n\nDamos por finalizada esta sesión de estudio y repaso para consolidar la memoria a largo plazo y evitar la sobrecarga cognitiva. ¡Enhorabuena por tu constancia! 🎉\n\n[TAREA_COMPLETADA: ${activityId || 'task_general'}]`;
+    } else if (history && history.length >= 8) {
+      // Guardrail Nivel 3: Prevención de fatiga cognitiva si ya hubo 4 o más intercambios
+      reply = `¡Gran esfuerzo durante esta sesión de estudio en **${subject}**! 👏 Hemos cubierto los aspectos fundamentales del temario previsto. Para evitar la fatiga mental y fijar lo aprendido, cerramos aquí el bloque de trabajo de hoy.\n\nDescansa un rato y celebra los progresos que has conseguido razonando paso a paso. ¡Objetivo alcanzado! 🚀\n\n[TAREA_COMPLETADA: ${activityId || 'task_pacing'}]`;
+    } else if (isDirectSolutionRequest) {
+      reply = `¡Me encantaría ahorrarte tiempo, pero si te doy la respuesta directa te quitaría la oportunidad de entrenar tu mente para el examen! 💪\n\nVamos a descubrirlo paso a paso. Cuéntame: **¿Qué datos conocidos nos da el enunciado y cuál es la incógnita que nos piden averiguar?**`;
       suggestions = [
         'Los datos son...',
         'No entiendo bien qué significa este dato',
         '¿Qué fórmula podemos usar?'
       ];
     } else if (text.includes('no entiendo') || text.includes('duda') || text.includes('dificil') || text.includes('difícil')) {
-      reply = `Es completamente normal dudar, ¡así es exactamente como se construye el aprendizaje significativo! 🧠✨
-
-Para abordar ${subject}, descompongamos el problema en partes más pequeñas. ¿Qué parte del concepto te resulta más clara hasta ahora y en cuál sientes que te quedas atascado?`;
+      reply = `Es completamente normal dudar, ¡así es exactamente como se construye el aprendizaje significativo! 🧠✨\n\nPara abordar ${subject}, descompongamos el problema en partes más pequeñas. ¿Qué parte del concepto te resulta más clara hasta ahora y en cuál sientes que te quedas atascado?`;
       suggestions = [
         'Entiendo la teoría pero me cuesta aplicarlo',
         '¿Puedes darme una pista visual o ejemplo?',
         'Creo que el primer paso es identificar las variables'
       ];
     } else {
-      reply = `¡Excelente razonamiento! Estás conectando muy bien las ideas en **${subject}**.
-
-Siguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocurriría con el resultado final?** Intenta formular tu hipótesis antes de comprobarla.`;
+      reply = `¡Excelente razonamiento! Estás conectando muy bien las ideas en **${subject}**.\n\nSiguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocurriría con el resultado final?** Intenta formular tu hipótesis antes de comprobarla.`;
       suggestions = [
         'Creo que aumentaría proporcionalmente',
         '¿Podría haber una excepción a esa regla?',
@@ -684,15 +731,27 @@ Siguiendo esa lógica: si aplicas eso al siguiente paso, **¿qué crees que ocur
       ];
     }
 
+    const completionMatch = reply.match(/\[TAREA_COMPLETADA(?::\s*([a-zA-Z0-9_\-]+))?\]/i);
+    const isCompleted = !!completionMatch;
+    const cleanedContent = reply.replace(/\[TAREA_COMPLETADA(?::\s*([a-zA-Z0-9_\-]+))?\]/gi, '').trim();
+
     return {
       id: `msg_${Date.now()}`,
       role: 'tutor',
-      content: reply,
+      content: cleanedContent,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isSocraticQuestion: true,
-      suggestedPrompts: suggestions
+      isSocraticQuestion: !isCompleted,
+      isTaskCompleted: isCompleted,
+      suggestedPrompts: isCompleted
+        ? [
+            '🎉 ¡Objetivo pedagógico conseguido!',
+            'Avanzar a la siguiente variación',
+            'Volver a la Agenda'
+          ]
+        : suggestions
     };
   }
 }
 
 export const aiClientService = new AIClientService();
+

@@ -7,6 +7,8 @@ export interface ChatMessage {
   timestamp: string;
   isSocraticQuestion?: boolean;
   suggestedPrompts?: string[];
+  isTaskCompleted?: boolean;
+  completionSummary?: string;
 }
 
 export interface FlashCard {
@@ -23,4 +25,20 @@ export interface StudyTopic {
   name: string;
   level: string;
   keyConcepts: string[];
+}
+
+export type StudyTaskStatus = 'pending' | 'active' | 'paused' | 'completed';
+
+export interface StudyTaskSession {
+  topicId: string;
+  status: StudyTaskStatus;
+  selectedActivityId: string;
+  messages: ChatMessage[];
+  flashcardConcept?: string;
+  flashcardExplanation?: string;
+  flashcardRevealed: boolean;
+  lastActiveAt?: string | Date;
+  updatedAt?: string;
+  completedAt?: string;
+  completionSummary?: string;
 }

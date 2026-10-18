@@ -3,12 +3,14 @@ import type { AISettings } from '../types/ai';
 import type { StudyBlock } from '../types/agenda';
 import type { ProjectTask } from '../types/tasks';
 import type { GoogleProfile } from '../types/auth';
+import type { StudyTaskSession } from '../types/study';
 
 export class AnaxagorasDatabase extends Dexie {
   aiSettings!: Table<AISettings, number>;
   studyBlocks!: Table<StudyBlock, number>;
   projectTasks!: Table<ProjectTask, number>;
   userProfile!: Table<GoogleProfile, string>;
+  studyTaskSessions!: Table<StudyTaskSession, string>;
 
   constructor() {
     super('AnaxagorasAIDatabase');
@@ -18,10 +20,70 @@ export class AnaxagorasDatabase extends Dexie {
       projectTasks: '++id, subject, currentPhase, dueDate',
       userProfile: 'id, email'
     });
+    this.version(2).stores({
+      studyTaskSessions: 'topicId, status, selectedActivityId, updatedAt'
+    });
   }
 }
 
 export const db = new AnaxagorasDatabase();
+
+/**
+ * Guarda o actualiza en IndexedDB la sesión de estudio y repaso en tiempo real.
+ * De esta forma, si el alumno cierra el navegador o cambia de pestaña, 
+ * su avance y conversación completa quedan preservados.
+ */
+export async function saveStudyTaskSessionToDb(session: StudyTaskSession): Promise<void> {
+  try {
+    const serializableSession: StudyTaskSession = {
+      ...session,
+      lastActiveAt: session.lastActiveAt instanceof Date ? session.lastActiveAt.toISOString() : session.lastActiveAt,
+      updatedAt: new Date().toISOString()
+    };
+    await db.studyTaskSessions.put(serializableSession);
+  } catch (err) {
+    console.warn('[Storage] Error persisting studyTaskSession:', err);
+  }
+}
+
+/**
+ * Recupera todas las sesiones de estudio y repaso guardadas previamente en IndexedDB.
+ */
+export async function getAllStudyTaskSessionsFromDb(): Promise<StudyTaskSession[]> {
+  try {
+    return await db.studyTaskSessions.toArray();
+  } catch (err) {
+    console.warn('[Storage] Error retrieving studyTaskSessions:', err);
+    return [];
+  }
+}
+
+/**
+ * Cuando se supera el objetivo pedagógico de un tema, marca como completado
+ * el bloque de estudio correspondiente en la agenda escolar.
+ */
+export async function markMatchingStudyBlockCompleted(subject: string, topicName: string): Promise<StudyBlock | null> {
+  try {
+    const blocks = await db.studyBlocks.toArray();
+    const matched = blocks.find(b => 
+      !b.completed && (
+        b.subject.toLowerCase().includes(subject.toLowerCase()) || 
+        subject.toLowerCase().includes(b.subject.toLowerCase()) ||
+        topicName.toLowerCase().includes(b.title.toLowerCase()) ||
+        b.title.toLowerCase().includes(topicName.toLowerCase())
+      )
+    );
+
+    if (matched && matched.id) {
+      await db.studyBlocks.update(matched.id, { completed: true });
+      matched.completed = true;
+      return matched;
+    }
+  } catch (err) {
+    console.warn('[Storage] Error marking matching study block completed:', err);
+  }
+  return null;
+}
 
 // Pre-populate with realistic, engaging starter data if database is empty
 export async function initializeStarterData(): Promise<void> {

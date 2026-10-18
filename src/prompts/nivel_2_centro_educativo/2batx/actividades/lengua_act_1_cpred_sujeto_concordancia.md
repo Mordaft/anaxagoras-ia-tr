@@ -20,3 +20,8 @@
 
 ## 🛡️ Pregunta Socrática de Control PAU
 *"Fíjate en la categoría morfológica de 'puntual'. Si decimos 'Las locomotoras llegaron puntual', ¿te suena natural? ¿Qué demuestra esa variación morfológica sobre la función sintáctica según la RAE?"*
+
+---
+
+## 🏁 Criterio de Éxito y Finalización
+En cuanto el alumno justifique la prueba de concordancia en plural ("Las locomotoras llegaron puntuales") o razone que es Complemento Predicativo (CPred) y no CCM, valida su deducción con rigor filológico, sintetiza la regla y emite obligatoriamente: `[TAREA_COMPLETADA: act_lengua_2batx_1]` sin formular más preguntas.

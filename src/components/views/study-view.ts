@@ -4,22 +4,18 @@ import { promptOrchestratorService } from '../../services/prompt-orchestrator';
 import { renderPromptViewerModal } from '../modals/prompt-viewer-modal';
 import { formatMathInText, renderMathCard } from '../common/math-expression';
 import { t } from '../../services/i18n';
-import type { ChatMessage } from '../../types/study';
+import type { ChatMessage, StudyTaskSession } from '../../types/study';
 import type { TopicContextDefinition, ActivityDefinition } from '../../types/prompts';
+import { 
+  saveStudyTaskSessionToDb, 
+  getAllStudyTaskSessionsFromDb, 
+  markMatchingStudyBlockCompleted 
+} from '../../services/storage';
 
-interface StudyTaskSession {
-  topicId: string;
-  status: 'pending' | 'active' | 'paused';
-  selectedActivityId: string;
-  messages: ChatMessage[];
-  flashcardConcept?: string;
-  flashcardExplanation?: string;
-  flashcardRevealed: boolean;
-  lastActiveAt?: Date;
-}
-
-// Module-level persistent task sessions map (preserves chat and work done across pauses and tab changes)
+// Module-level persistent task sessions map (preserves chat and work done across pauses, tab changes, and reloads)
 const taskSessions = new Map<string, StudyTaskSession>();
+let currentOpenTopicId: string | null = null;
+let isLoadedFromDb = false;
 
 function getSubjectIcon(subject: string): string {
   if (subject.includes('Lengua')) return '📖';
@@ -146,22 +142,50 @@ export function renderStudyView(container: HTMLElement): void {
   // Obtener temas curriculares del grado actual mediante el orquestador
   const availableTopics: TopicContextDefinition[] = promptOrchestratorService.getTopicsForGrade(currentGrade);
 
-  // Asegurar que cada tema tiene una sesión en memoria
-  availableTopics.forEach(topic => {
-    if (!taskSessions.has(topic.id)) {
-      const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
-      const defaultCard = getDefaultFlashcardData(topic, currentGrade);
-      taskSessions.set(topic.id, {
-        topicId: topic.id,
-        status: 'pending',
-        selectedActivityId: activities[0]?.id || '',
-        messages: [],
-        flashcardConcept: defaultCard.concept,
-        flashcardExplanation: defaultCard.explanation,
-        flashcardRevealed: false
-      });
+  // Inicializar cargando datos guardados en IndexedDB
+  async function initializeData(): Promise<void> {
+    if (!isLoadedFromDb) {
+      try {
+        const persisted = await getAllStudyTaskSessionsFromDb();
+        for (const p of persisted) {
+          taskSessions.set(p.topicId, p);
+        }
+        isLoadedFromDb = true;
+      } catch (err) {
+        console.warn('[StudyView] Error loading from IndexedDB:', err);
+      }
     }
-  });
+
+    // Asegurar que cada tema tiene una sesión en memoria
+    availableTopics.forEach(topic => {
+      if (!taskSessions.has(topic.id)) {
+        const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
+        const defaultCard = getDefaultFlashcardData(topic, currentGrade);
+        const newSession: StudyTaskSession = {
+          topicId: topic.id,
+          status: 'pending',
+          selectedActivityId: activities[0]?.id || '',
+          messages: [],
+          flashcardConcept: defaultCard.concept,
+          flashcardExplanation: defaultCard.explanation,
+          flashcardRevealed: false
+        };
+        taskSessions.set(topic.id, newSession);
+      }
+    });
+
+    // Restaurar automáticamente la tarea que estaba activa antes de recargar
+    if (!currentOpenTopicId) {
+      for (const [id, session] of taskSessions.entries()) {
+        if (session.status === 'active') {
+          currentOpenTopicId = id;
+          break;
+        }
+      }
+    }
+
+    render();
+  }
 
   function getSession(topicId: string): StudyTaskSession {
     let session = taskSessions.get(topicId);
@@ -183,18 +207,22 @@ export function renderStudyView(container: HTMLElement): void {
     return session;
   }
 
-  function startTask(topicId: string): void {
+  async function startTask(topicId: string): Promise<void> {
     // Regla estricta: Solo puede haber UNA tarea activa.
     // Si selecciono iniciar otra tarea, la anterior pasa a 'paused' (En pausa) plegándose.
     for (const [id, session] of taskSessions.entries()) {
       if (id !== topicId && session.status === 'active') {
         session.status = 'paused';
+        await saveStudyTaskSessionToDb(session);
       }
     }
 
+    currentOpenTopicId = topicId;
     const session = getSession(topicId);
-    session.status = 'active';
-    session.lastActiveAt = new Date();
+    if (session.status !== 'completed') {
+      session.status = 'active';
+    }
+    session.lastActiveAt = new Date().toISOString();
 
     // Inicializar mensaje del tutor si es la primera vez que se inicia
     if (session.messages.length === 0) {
@@ -206,6 +234,7 @@ export function renderStudyView(container: HTMLElement): void {
       }
     }
 
+    await saveStudyTaskSessionToDb(session);
     render();
 
     // Scroll suave dentro de la lista a la tarea recién desplegada
@@ -217,15 +246,23 @@ export function renderStudyView(container: HTMLElement): void {
     });
   }
 
-  function pauseTask(topicId: string): void {
+  async function pauseTask(topicId: string): Promise<void> {
     const session = getSession(topicId);
-    session.status = 'paused';
+    if (session.status === 'active') {
+      session.status = 'paused';
+    }
+    currentOpenTopicId = null;
+    await saveStudyTaskSessionToDb(session);
     render();
   }
 
-  function selectActivity(topicId: string, activityId: string): void {
+  async function selectActivity(topicId: string, activityId: string): Promise<void> {
     const session = getSession(topicId);
     session.selectedActivityId = activityId;
+    // Si la actividad previa estaba completada y cambia de variación, se reactiva el diálogo socrático
+    if (session.status === 'completed') {
+      session.status = 'active';
+    }
     const topic = availableTopics.find(t => t.id === topicId);
     if (topic) {
       const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
@@ -247,6 +284,7 @@ export function renderStudyView(container: HTMLElement): void {
         session.messages.push(transitionMsg);
       }
     }
+    await saveStudyTaskSessionToDb(session);
     render();
   }
 
@@ -262,6 +300,11 @@ export function renderStudyView(container: HTMLElement): void {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     session.messages.push(userMsg);
+    session.lastActiveAt = new Date().toISOString();
+
+    // GUARDADO INMEDIATO EN INDEXEDDB ANTES DE LA RESPUESTA
+    // Garantiza que aunque el navegador se cierre en este instante, el avance no se pierde
+    await saveStudyTaskSessionToDb(session);
     render();
 
     const sendBtn = container.querySelector(`#btn-send-message-${topicId}`);
@@ -276,8 +319,21 @@ export function renderStudyView(container: HTMLElement): void {
     );
 
     session.messages.push(response);
+
+    // GUARDRAIL DE CIERRE PEDAGÓGICO:
+    // Si el tutor emite la señal de tarea completada o alcanza la meta del nivel pedagógico
+    if (response.isTaskCompleted) {
+      session.status = 'completed';
+      session.completedAt = new Date().toISOString();
+      session.completionSummary = response.content;
+      await markMatchingStudyBlockCompleted(topic.subject, topic.name);
+    }
+
+    // PERSISTENCIA DE LA CONVERSACIÓN Y ESTADO EN INDEXEDDB
+    await saveStudyTaskSessionToDb(session);
     render();
   }
+
 
   function renderMessageBubble(msg: ChatMessage): string {
     const isTutor = msg.role === 'tutor';
@@ -320,7 +376,9 @@ export function renderStudyView(container: HTMLElement): void {
   }
 
   function render(): void {
-    const activeSession = Array.from(taskSessions.values()).find(s => s.status === 'active');
+    const activeSession = currentOpenTopicId 
+      ? taskSessions.get(currentOpenTopicId) 
+      : Array.from(taskSessions.values()).find(s => s.status === 'active');
     const activeTopic = activeSession ? availableTopics.find(t => t.id === activeSession.topicId) : null;
     const currentListEl = container.querySelector('#study-tasks-list');
     const prevScrollTop = currentListEl ? currentListEl.scrollTop : 0;
@@ -347,9 +405,13 @@ export function renderStudyView(container: HTMLElement): void {
                 </span>
                 ${
                   activeTopic
-                    ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold flex items-center gap-1.5">
-                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                         <span>1 ${t('study.activeBadge')}: ${activeTopic.subject}</span>
+                    ? `<span class="text-xs px-2.5 py-0.5 rounded-full ${
+                        activeSession?.status === 'completed'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold'
+                      } flex items-center gap-1.5">
+                         <span class="w-1.5 h-1.5 rounded-full ${activeSession?.status === 'completed' ? 'bg-emerald-600' : 'bg-emerald-500 animate-pulse'}"></span>
+                         <span>${activeSession?.status === 'completed' ? t('study.statusCompleted') : `1 ${t('study.activeBadge')}`}: ${activeTopic.subject}</span>
                        </span>`
                     : `<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-semibold">
                          ${t('study.statusPaused')} / ${t('study.statusPending')}
@@ -415,18 +477,29 @@ export function renderStudyView(container: HTMLElement): void {
     const session = getSession(topic.id);
     const activities = promptOrchestratorService.getActivitiesForTopic(topic.id);
     const activeActivity = activities.find(a => a.id === session.selectedActivityId) || activities[0];
+    const isCompleted = session.status === 'completed';
     const isPaused = session.status === 'paused';
     const isActive = session.status === 'active';
+    const isOpen = currentOpenTopicId === topic.id || (currentOpenTopicId === null && isActive);
     const subjectIcon = getSubjectIcon(topic.subject);
     const subjectBadgeClass = getSubjectBadgeClass(topic.subject);
     const messagesExchanged = session.messages.filter(m => m.role === 'student').length;
 
-    // === CASO 1: TAREA DESPLEGADA (ACTIVA) ===
-    if (isActive) {
+    const currentActIndex = activities.findIndex(a => a.id === activeActivity?.id);
+    const nextActivity = (currentActIndex >= 0 && currentActIndex < activities.length - 1)
+      ? activities[currentActIndex + 1]
+      : null;
+
+    // === CASO 1: TAREA DESPLEGADA (ACTIVA O REVISANDO COMPLETADA) ===
+    if (isOpen) {
       return `
         <div 
           id="task-card-${topic.id}" 
-          class="glass-panel p-6 rounded-3xl border-2 border-brand-500/70 bg-white/95 shadow-xl shadow-brand-500/10 glow-card space-y-5 transition-all duration-300"
+          class="glass-panel p-6 rounded-3xl border-2 ${
+            isCompleted 
+              ? 'border-emerald-500/70 bg-white/95 shadow-xl shadow-emerald-500/10' 
+              : 'border-brand-500/70 bg-white/95 shadow-xl shadow-brand-500/10'
+          } glow-card space-y-5 transition-all duration-300"
         >
           <!-- Active Task Header -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -437,10 +510,17 @@ export function renderStudyView(container: HTMLElement): void {
                 <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${subjectBadgeClass}">
                   ${topic.subject}
                 </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>${t('study.statusActive')}</span>
-                </span>
+                ${
+                  isCompleted
+                    ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+                         <span>🏆</span>
+                         <span>${t('study.statusCompleted')}</span>
+                       </span>`
+                    : `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                         <span>${t('study.statusActive')}</span>
+                       </span>`
+                }
               </div>
               <p class="text-xs text-slate-600">${topic.pedagogicalNote || ''}</p>
             </div>
@@ -449,11 +529,15 @@ export function renderStudyView(container: HTMLElement): void {
             <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
               <button 
                 data-pause-topic-id="${topic.id}" 
-                class="btn-pause-task px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95"
-                title="${t('study.btnPause')}"
+                class="btn-pause-task px-3.5 py-2 rounded-xl ${
+                  isCompleted 
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                } text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95"
+                title="${isCompleted ? 'Plegar tarea completada' : t('study.btnPause')}"
               >
-                <span>⏸️</span>
-                <span>${t('study.btnPause')}</span>
+                <span>${isCompleted ? '📁' : '⏸️'}</span>
+                <span>${isCompleted ? 'Plegar' : t('study.btnPause')}</span>
               </button>
               <button 
                 data-topic-prompt-id="${topic.id}" 
@@ -544,43 +628,102 @@ export function renderStudyView(container: HTMLElement): void {
                 ${session.messages.map(msg => renderMessageBubble(msg)).join('')}
               </div>
 
-              <!-- Quick Socratic Prompts (Chips) -->
-              <div class="px-4 py-2 border-t border-slate-100 bg-white flex gap-2 overflow-x-auto text-xs">
-                <button data-topic-id="${topic.id}" data-prompt="¿Me puedes hacer una pregunta para diagnosticar qué parte no entiendo?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                  ${t('study.chip1')}
-                </button>
-                <button data-topic-id="${topic.id}" data-prompt="Dame una pista sin decirme la respuesta final" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                  ${t('study.chip2')}
-                </button>
-                <button data-topic-id="${topic.id}" data-prompt="Quiero intentar resolver el siguiente paso, ¿voy por buen camino?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
-                  ${t('study.chip3')}
-                </button>
-              </div>
+              ${
+                isCompleted
+                  ? `
+                <!-- Guardrail de Cierre Pedagógico: Banner de Finalización -->
+                <div class="p-4 sm:p-5 bg-gradient-to-r from-emerald-50 via-teal-50/70 to-white border-t border-emerald-200 space-y-3">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-500/20 flex-shrink-0">
+                        🎉
+                      </div>
+                      <div>
+                        <h4 class="font-display font-bold text-sm text-emerald-950">${t('study.completionBannerTitle')}</h4>
+                        <p class="text-xs text-emerald-800/80 leading-relaxed">${t('study.completionBannerDesc')}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 flex-wrap self-stretch sm:self-auto justify-end">
+                      ${
+                        nextActivity
+                          ? `
+                        <button 
+                          data-topic-id="${topic.id}" 
+                          data-next-act-id="${nextActivity.id}" 
+                          class="btn-advance-variation px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 active:scale-95"
+                        >
+                          <span>${t('study.btnNextVariation')} (${nextActivity.title})</span>
+                          <span>➡️</span>
+                        </button>
+                      `
+                          : ''
+                      }
+                      <button 
+                        data-reopen-topic-id="${topic.id}" 
+                        class="btn-reopen-task px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                        title="Volver a abrir el diálogo socrático si te surge una nueva duda"
+                      >
+                        <span>💬</span>
+                        <span>${t('study.btnReopenChat')}</span>
+                      </button>
+                    </div>
+                  </div>
 
-              <!-- Chat Input Area -->
-              <div class="p-4 bg-white border-t border-slate-200">
-                <form data-topic-id="${topic.id}" class="chat-form flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    id="chat-input-${topic.id}" 
-                    placeholder="${t('study.inputPlaceholder')}" 
-                    required
-                    class="chat-input flex-1 text-sm px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
-                  />
-                  <button 
-                    type="submit" 
-                    id="btn-send-message-${topic.id}"
-                    class="px-5 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    <span>${t('study.send')}</span>
-                    <span>➤</span>
-                  </button>
-                </form>
-                <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
-                  <span>${t('study.safeMode')}</span>
-                  <span>${t('study.openaiCompatible')}</span>
+                  <div class="flex items-center justify-between text-[11px] text-emerald-700/80 pt-2 border-t border-emerald-100/80">
+                    <span class="flex items-center gap-1.5 font-medium">
+                      <span>💾</span>
+                      <span>${t('study.indexedDbSavedNotice')}</span>
+                    </span>
+                    <span class="font-mono text-[10px] text-emerald-600 font-semibold bg-emerald-100/60 px-2 py-0.5 rounded-full">
+                      IndexedDB v2 • Local-First
+                    </span>
+                  </div>
                 </div>
-              </div>
+              `
+                  : `
+                <!-- Quick Socratic Prompts (Chips) -->
+                <div class="px-4 py-2 border-t border-slate-100 bg-white flex gap-2 overflow-x-auto text-xs">
+                  <button data-topic-id="${topic.id}" data-prompt="¿Me puedes hacer una pregunta para diagnosticar qué parte no entiendo?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
+                    ${t('study.chip1')}
+                  </button>
+                  <button data-topic-id="${topic.id}" data-prompt="Dame una pista sin decirme la respuesta final" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
+                    ${t('study.chip2')}
+                  </button>
+                  <button data-topic-id="${topic.id}" data-prompt="Quiero intentar resolver el siguiente paso, ¿voy por buen camino?" class="chip-btn whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-300 hover:bg-brand-50 text-slate-700 transition-colors">
+                    ${t('study.chip3')}
+                  </button>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="p-4 bg-white border-t border-slate-200">
+                  <form data-topic-id="${topic.id}" class="chat-form flex items-center gap-2">
+                    <input 
+                      type="text" 
+                      id="chat-input-${topic.id}" 
+                      placeholder="${t('study.inputPlaceholder')}" 
+                      required
+                      class="chat-input flex-1 text-sm px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                    />
+                    <button 
+                      type="submit" 
+                      id="btn-send-message-${topic.id}"
+                      class="px-5 py-2.5 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      <span>${t('study.send')}</span>
+                      <span>➤</span>
+                    </button>
+                  </form>
+                  <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
+                    <span>${t('study.safeMode')}</span>
+                    <span class="flex items-center gap-1 text-emerald-600 font-medium">
+                      <span>💾</span>
+                      <span>Auto-guardado en IndexedDB</span>
+                    </span>
+                  </div>
+                </div>
+              `
+              }
 
             </div>
 
@@ -672,12 +815,14 @@ export function renderStudyView(container: HTMLElement): void {
       `;
     }
 
-    // === CASO 2: TAREA PLEGADA (PENDIENTE O EN PAUSA) ===
+    // === CASO 2: TAREA PLEGADA (PENDIENTE, EN PAUSA O COMPLETADA) ===
     return `
       <div 
         id="task-card-${topic.id}" 
         class="glass-panel p-5 sm:p-6 rounded-3xl border ${
-          isPaused 
+          isCompleted
+            ? 'border-emerald-300/80 bg-emerald-50/20 shadow-md shadow-emerald-500/5'
+            : isPaused 
             ? 'border-amber-300/80 bg-amber-50/20 shadow-md shadow-amber-500/5' 
             : 'border-slate-200 hover:border-slate-300 bg-white/70'
         } glow-card space-y-4 transition-all duration-300"
@@ -692,7 +837,12 @@ export function renderStudyView(container: HTMLElement): void {
                 ${topic.subject}
               </span>
               ${
-                isPaused
+                isCompleted
+                  ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-sm">
+                       <span>🏆</span>
+                       <span>${t('study.statusCompleted')}</span>
+                     </span>`
+                  : isPaused
                   ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-sm">
                        <span class="text-xs">⏸️</span>
                        <span>${t('study.statusPaused')}</span>
@@ -708,7 +858,14 @@ export function renderStudyView(container: HTMLElement): void {
           <!-- Actions & Status Info -->
           <div class="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
             ${
-              isPaused
+              isCompleted
+                ? `
+              <div class="text-left sm:text-right hidden sm:block">
+                <span class="block text-xs font-bold text-emerald-900">${t('study.interactionsCount', { count: messagesExchanged })}</span>
+                <span class="text-[11px] text-emerald-700 font-medium truncate max-w-[150px] block">${activeActivity?.title || ''}</span>
+              </div>
+            `
+                : isPaused
                 ? `
               <div class="text-left sm:text-right hidden sm:block">
                 <span class="block text-xs font-bold text-amber-900">${t('study.interactionsCount', { count: messagesExchanged })}</span>
@@ -735,13 +892,15 @@ export function renderStudyView(container: HTMLElement): void {
             <button 
               data-start-topic-id="${topic.id}" 
               class="btn-start-task px-4 py-2 rounded-2xl ${
-                isPaused 
+                isCompleted
+                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
+                  : isPaused 
                   ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20' 
                   : 'bg-brand-600 hover:bg-brand-700 shadow-brand-500/20'
               } text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap active:scale-95"
             >
-              <span>${isPaused ? '▶️' : '🚀'}</span>
-              <span>${isPaused ? t('study.btnResume') : t('study.btnStart')}</span>
+              <span>${isCompleted ? '👁️' : isPaused ? '▶️' : '🚀'}</span>
+              <span>${isCompleted ? t('study.btnReviewConversation') : isPaused ? t('study.btnResume') : t('study.btnStart')}</span>
             </button>
           </div>
         </div>
@@ -762,7 +921,14 @@ export function renderStudyView(container: HTMLElement): void {
           </div>
 
           ${
-            isPaused
+            isCompleted
+              ? `
+            <span class="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+              <span>💾</span>
+              <span>${t('study.indexedDbSavedNotice')}</span>
+            </span>
+          `
+              : isPaused
               ? `
             <span class="text-[11px] text-amber-700/90 font-semibold flex items-center gap-1">
               <span>💾</span>
@@ -775,6 +941,7 @@ export function renderStudyView(container: HTMLElement): void {
       </div>
     `;
   }
+
 
   function hookEventListeners(): void {
     // 1. Iniciar / Continuar tarea
@@ -807,6 +974,32 @@ export function renderStudyView(container: HTMLElement): void {
         const actId = btn.dataset.selectActivityId;
         if (topicId && actId) {
           selectActivity(topicId, actId);
+        }
+      });
+    });
+
+    // 3b. Avanzar variación desde el banner de tarea completada
+    const advanceBtns = container.querySelectorAll<HTMLButtonElement>('.btn-advance-variation');
+    advanceBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const topicId = btn.dataset.topicId;
+        const nextActId = btn.dataset.nextActId;
+        if (topicId && nextActId) {
+          selectActivity(topicId, nextActId);
+        }
+      });
+    });
+
+    // 3c. Reabrir diálogo socrático tras haber completado la tarea
+    const reopenBtns = container.querySelectorAll<HTMLButtonElement>('.btn-reopen-task');
+    reopenBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const topicId = btn.dataset.reopenTopicId;
+        if (topicId) {
+          const session = getSession(topicId);
+          session.status = 'active';
+          await saveStudyTaskSessionToDb(session);
+          render();
         }
       });
     });
@@ -876,13 +1069,14 @@ export function renderStudyView(container: HTMLElement): void {
     // 6. Mostrar/Ocultar respuesta de la tarjeta de autoaprendizaje
     const toggleAnsBtns = container.querySelectorAll<HTMLButtonElement>('.btn-toggle-answer');
     toggleAnsBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const topicId = btn.dataset.topicId;
         if (topicId) {
           const session = getSession(topicId);
           session.flashcardRevealed = !session.flashcardRevealed;
           const ansEl = container.querySelector(`#flashcard-answer-${topicId}`);
           ansEl?.classList.toggle('hidden', !session.flashcardRevealed);
+          await saveStudyTaskSessionToDb(session);
         }
       });
     });
@@ -901,6 +1095,7 @@ export function renderStudyView(container: HTMLElement): void {
             session.flashcardConcept = card.concept;
             session.flashcardExplanation = card.explanation;
             session.flashcardRevealed = false;
+            await saveStudyTaskSessionToDb(session);
 
             const conceptEl = container.querySelector(`#flashcard-concept-${topic.id}`);
             const explEl = container.querySelector(`#flashcard-explanation-${topic.id}`);
@@ -963,5 +1158,5 @@ export function renderStudyView(container: HTMLElement): void {
     }
   }
 
-  render();
+  initializeData();
 }
