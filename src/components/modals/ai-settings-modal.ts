@@ -9,11 +9,11 @@ export interface AISettingsModalCallbacks {
 export function renderAISettingsModal(container: HTMLElement, callbacks: AISettingsModalCallbacks): void {
   aiClientService.getSettings().then(settings => {
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-slate-100 transition-all">
+      <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-7 border border-slate-100 transition-all my-auto max-h-[92vh] flex flex-col">
           
           <!-- Header -->
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 flex-shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center text-xl">
                 🤖
@@ -29,7 +29,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
           </div>
 
           <!-- Form -->
-          <form id="ai-settings-form" class="mt-6 space-y-4">
+          <form id="ai-settings-form" class="mt-4 sm:mt-6 space-y-4 flex-1 overflow-y-auto pr-1">
             
             <!-- Provider Selector -->
             <div>
@@ -111,7 +111,7 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
             <div id="test-result-box" class="hidden p-3 rounded-xl text-xs font-medium"></div>
 
             <!-- Actions -->
-            <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100">
+            <div class="pt-4 flex items-center justify-between gap-3 border-t border-slate-100 flex-shrink-0">
               <button 
                 type="button" 
                 id="btn-test-connection" 

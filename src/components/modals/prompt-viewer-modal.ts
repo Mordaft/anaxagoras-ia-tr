@@ -316,7 +316,7 @@ export function renderPromptViewerModal(
 
     return `
       <div id="prompt-modal-backdrop" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
-        <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-slate-100 max-h-[92vh] flex flex-col transition-all">
+        <div class="relative bg-white rounded-3xl shadow-2xl max-w-4xl w-full p-4 sm:p-6 border border-slate-100 max-h-[92vh] flex flex-col transition-all my-auto">
           
           <!-- Header Modal -->
           <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 flex-shrink-0">

@@ -11,11 +11,11 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
   const auth = googleAuthService.getState();
 
   container.innerHTML = `
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 border border-slate-100 transition-all">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div class="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-7 border border-slate-100 transition-all my-auto max-h-[92vh] flex flex-col">
         
         <!-- Header -->
-        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 flex-shrink-0">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-200">
               <svg class="w-6 h-6" viewBox="0 0 24 24">
@@ -36,7 +36,7 @@ export function renderAuthModal(container: HTMLElement, callbacks: AuthModalCall
         </div>
 
         <!-- Body -->
-        <div class="mt-6 space-y-5">
+        <div class="mt-4 sm:mt-6 space-y-5 flex-1 overflow-y-auto pr-1">
           ${
             auth.isAuthenticated && auth.user
               ? `
