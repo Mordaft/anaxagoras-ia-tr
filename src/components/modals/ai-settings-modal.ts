@@ -97,16 +97,6 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
               <span class="text-[11px] text-slate-400 mt-1 block">${t('aiModal.apiKeyHint')}</span>
             </div>
 
-            <!-- Socratic Strictness -->
-            <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">${t('aiModal.socraticMode')}</label>
-              <select id="select-strictness" class="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-                <option value="high" ${settings.socraticStrictness === 'high' ? 'selected' : ''}>${t('aiModal.strictHigh')}</option>
-                <option value="balanced" ${settings.socraticStrictness === 'balanced' ? 'selected' : ''}>${t('aiModal.strictBalanced')}</option>
-                <option value="exploratory" ${settings.socraticStrictness === 'exploratory' ? 'selected' : ''}>${t('aiModal.strictExploratory')}</option>
-              </select>
-            </div>
-
             <!-- Live Status Alert -->
             <div id="test-result-box" class="hidden p-3 rounded-xl text-xs font-medium"></div>
 
@@ -189,14 +179,13 @@ export function renderAISettingsModal(container: HTMLElement, callbacks: AISetti
       const model = (container.querySelector('#input-model') as HTMLInputElement).value.trim();
       const apiKey = (container.querySelector('#input-apikey') as HTMLInputElement).value.trim();
       const providerRadio = container.querySelector('input[name="provider"]:checked') as HTMLInputElement;
-      const strictness = (container.querySelector('#select-strictness') as HTMLSelectElement).value;
 
       await aiClientService.updateSettings({
         provider: providerRadio?.value as any || 'local',
         endpointUrl: endpoint,
         modelName: model,
         apiKey,
-        socraticStrictness: strictness as any
+        socraticStrictness: 'high'
       });
 
       callbacks.onSaved();
