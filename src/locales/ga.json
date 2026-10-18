@@ -114,7 +114,10 @@
     "pauseNotice": "En pausa (sesión gardada)",
     "activeBadge": "Sesión activa",
     "activeTaskNote": "Ao iniciar outra tarefa, a anterior pausarase automaticamente.",
-    "noTasks": "Non hai tarefas de estudo dispoñibles para este curso."
+    "noTasks": "Non hai tarefas de estudo dispoñibles para este curso.",
+    "btnBackToList": "← Volver á lista de tarefas",
+    "btnPauseAndExit": "Pausar e saír",
+    "btnFold": "Volver á lista"
   },
   "tasks": {
     "title": "Traballos e Proxectos Escolares",
@@ -137,7 +140,7 @@
     "emptyTitle": "Non tes traballos activos rexistrados.",
     "emptyDesc": "Preme en \"Novo Traballo\" para comezar a estruturar un entregable.",
     "dueDate": "Data Límite",
-    "autonomy": "Autonomía",
+    "autonomy": "Autonomia",
     "phasesTitle": "Fases de Elaboración",
     "phases": {
       "planning": "1. Planificación",
@@ -158,7 +161,14 @@
     "fieldDue": "Data de Entrega",
     "fieldNotes": "Descrición ou obxectivo",
     "cancel": "Cancelar",
-    "create": "Crear Traballo"
+    "create": "Crear Traballo",
+    "btnBackToList": "← Volver á lista de traballos",
+    "btnStart": "Iniciar",
+    "btnResume": "Continuar",
+    "btnReview": "Revisar traballo",
+    "criteriaCompleted": "{{completed}} de {{total}} criterios de autoría",
+    "driveFilesCount": "{{count}} documentos de Drive",
+    "noDriveFilesShort": "Sen ficheiros de Drive"
   },
   "promptModal": {
     "titleAssembled": "Ensamblado do Prompt ({{subject}})",
