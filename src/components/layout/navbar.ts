@@ -13,7 +13,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
   const currentLang = i18n.getCurrentLanguage();
 
   container.innerHTML = `
-    <header class="sticky top-0 z-40 w-full glass-panel border-b border-slate-200/80 shadow-sm transition-all duration-200">
+    <div class="w-full transition-all duration-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         <!-- Logo & Branding -->
@@ -55,7 +55,7 @@ export function renderNavbar(container: HTMLElement, callbacks: NavbarCallbacks)
           <div id="auth-container"></div>
         </div>
       </div>
-    </header>
+    </div>
   `;
 
   // Language selector listener with i18n

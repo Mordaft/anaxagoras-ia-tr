@@ -18,16 +18,16 @@
     <!-- Google Identity Services (GIS) for real OAuth 2.0 -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased h-screen h-[100dvh] overflow-hidden flex flex-col">
     
-    <!-- Top Global Navigation Bar -->
-    <div id="navbar-root"></div>
-
-    <!-- Main Navigation Tabs -->
-    <div id="tabs-root"></div>
+    <!-- Top Global Navigation Bar & Tabs Header -->
+    <header id="app-top-header" class="flex-shrink-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+      <div id="navbar-root"></div>
+      <div id="tabs-root"></div>
+    </header>
 
     <!-- Active View Container -->
-    <main id="app-view-container" class="pb-16"></main>
+    <main id="app-view-container" class="flex-1 min-h-0 flex flex-col overflow-hidden"></main>
 
     <!-- Modal Containers -->
     <div id="modal-root"></div>

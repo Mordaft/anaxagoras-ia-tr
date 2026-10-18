@@ -57,6 +57,17 @@ class AnaxagorasApp {
     // 7. Render initial view
     this.switchView(this.activeTab);
     this.isReady = true;
+
+    // 8. Reenvío suave de scroll desde la cabecera superior hacia la lista activa
+    const topHeader = document.getElementById('app-top-header');
+    if (topHeader) {
+      topHeader.addEventListener('wheel', (e: WheelEvent) => {
+        const activeList = document.querySelector<HTMLElement>('#study-tasks-list, #tasks-list');
+        if (activeList) {
+          activeList.scrollTop += e.deltaY;
+        }
+      }, { passive: true });
+    }
   }
 
   private renderHeaderAndTabs(): void {

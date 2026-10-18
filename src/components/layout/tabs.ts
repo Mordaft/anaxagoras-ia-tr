@@ -8,8 +8,8 @@ export interface TabsCallbacks {
 
 export function renderTabs(container: HTMLElement, activeTab: ActiveTab, callbacks: TabsCallbacks): void {
   container.innerHTML = `
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-      <div class="flex items-center justify-between border-b border-slate-200">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-0">
+      <div class="flex items-center justify-between border-b border-slate-200/80">
         
         <!-- Tab Navigation Buttons -->
         <div class="flex space-x-1 sm:space-x-3 -mb-px">

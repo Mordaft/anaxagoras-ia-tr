@@ -208,11 +208,11 @@ export function renderStudyView(container: HTMLElement): void {
 
     render();
 
-    // Scroll suave a la tarea recién desplegada
+    // Scroll suave dentro de la lista a la tarea recién desplegada
     requestAnimationFrame(() => {
       const el = container.querySelector(`#task-card-${topicId}`);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   }
@@ -322,65 +322,72 @@ export function renderStudyView(container: HTMLElement): void {
   function render(): void {
     const activeSession = Array.from(taskSessions.values()).find(s => s.status === 'active');
     const activeTopic = activeSession ? availableTopics.find(t => t.id === activeSession.topicId) : null;
+    const currentListEl = container.querySelector('#study-tasks-list');
+    const prevScrollTop = currentListEl ? currentListEl.scrollTop : 0;
 
     container.innerHTML = `
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div class="flex-1 flex flex-col min-h-0 h-full max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Section Header (Consistent with Tasks/Projects view) -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-xl font-display font-bold text-slate-900">
-                ${t('study.taskListTitle')}
-              </h2>
-              <span class="text-xs px-2.5 py-0.5 rounded-full ${
-                currentGrade === '1eso' 
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                  : 'bg-purple-100 text-purple-800 border border-purple-300'
-              } font-bold">
-                ${currentStudent?.name || 'Estudiant'} • ${currentStudent?.gradeLevel || (currentGrade === '2batx' ? '2º Batx PAU' : '1º de ESO')}
-              </span>
-              ${
-                activeTopic
-                  ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold flex items-center gap-1.5">
-                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                       <span>1 ${t('study.activeBadge')}: ${activeTopic.subject}</span>
-                     </span>`
-                  : `<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-semibold">
-                       ${t('study.statusPaused')} / ${t('study.statusPending')}
-                     </span>`
-              }
-            </div>
-            <p class="text-xs text-slate-500 mt-1">${t('study.taskListSubtitle')}</p>
-          </div>
-
-          <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            <span class="text-xs px-3 py-1.5 rounded-2xl bg-brand-50 text-brand-700 border border-brand-200 font-semibold flex items-center gap-1">
-              <span>🛡️</span>
-              <span>${t('study.safeMode')}</span>
-            </span>
-          </div>
-        </div>
-
-        <!-- Pedagogical Guarantee Banner -->
-        <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-brand-600 via-brand-500 to-accent-cyan text-white shadow-lg shadow-brand-500/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div class="flex items-center gap-3.5">
-            <div class="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-2xl flex-shrink-0">
-              💡
-            </div>
+        <!-- Cabecera fija de la vista de Estudio (mantenida fija en la parte superior) -->
+        <div id="study-view-header" class="flex-shrink-0 pt-4 pb-3 space-y-3">
+          
+          <!-- Section Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h3 class="font-display font-bold text-base sm:text-lg">${t('study.bannerTitle')}</h3>
-              <p class="text-xs text-white/90">${t('study.bannerGraphDesc')}</p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-lg sm:text-xl font-display font-bold text-slate-900">
+                  ${t('study.taskListTitle')}
+                </h2>
+                <span class="text-xs px-2.5 py-0.5 rounded-full ${
+                  currentGrade === '1eso' 
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                    : 'bg-purple-100 text-purple-800 border border-purple-300'
+                } font-bold">
+                  ${currentStudent?.name || 'Estudiant'} • ${currentStudent?.gradeLevel || (currentGrade === '2batx' ? '2º Batx PAU' : '1º de ESO')}
+                </span>
+                ${
+                  activeTopic
+                    ? `<span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold flex items-center gap-1.5">
+                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                         <span>1 ${t('study.activeBadge')}: ${activeTopic.subject}</span>
+                       </span>`
+                    : `<span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-semibold">
+                         ${t('study.statusPaused')} / ${t('study.statusPending')}
+                       </span>`
+                }
+              </div>
+              <p class="text-xs text-slate-500 mt-1">${t('study.taskListSubtitle')}</p>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+              <span class="text-xs px-3 py-1.5 rounded-2xl bg-brand-50 text-brand-700 border border-brand-200 font-semibold flex items-center gap-1">
+                <span>🛡️</span>
+                <span>${t('study.safeMode')}</span>
+              </span>
             </div>
           </div>
-          <div class="flex items-center gap-2 bg-black/15 backdrop-blur-md px-3.5 py-1.5 rounded-2xl text-xs font-semibold self-stretch md:self-auto justify-center">
-            <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
-            <span>${currentGrade === '2batx' ? 'Álvaro Martín (2º Batx PAU)' : 'Marc Vidal (1º ESO)'}</span>
+
+          <!-- Pedagogical Guarantee Banner -->
+          <div class="p-3 sm:p-4 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-brand-600 via-brand-500 to-accent-cyan text-white shadow-md shadow-brand-500/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-xl sm:text-2xl flex-shrink-0">
+                💡
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-sm sm:text-base">${t('study.bannerTitle')}</h3>
+                <p class="text-[11px] sm:text-xs text-white/90">${t('study.bannerGraphDesc')}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 bg-black/15 backdrop-blur-md px-3 py-1 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-semibold self-stretch md:self-auto justify-center">
+              <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
+              <span>${currentGrade === '2batx' ? 'Álvaro Martín (2º Batx PAU)' : 'Marc Vidal (1º ESO)'}</span>
+            </div>
           </div>
+
         </div>
 
-        <!-- Study Tasks Accordion List -->
-        <div class="space-y-5" id="study-tasks-list">
+        <!-- Study Tasks Accordion List: Solo se mueven las pastillas -->
+        <div class="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 pb-16 pt-1" id="study-tasks-list">
           ${
             availableTopics.length === 0
               ? `
@@ -397,6 +404,11 @@ export function renderStudyView(container: HTMLElement): void {
     `;
 
     hookEventListeners();
+
+    const newListEl = container.querySelector('#study-tasks-list');
+    if (newListEl && prevScrollTop > 0) {
+      newListEl.scrollTop = prevScrollTop;
+    }
   }
 
   function renderTaskCard(topic: TopicContextDefinition): string {
@@ -939,6 +951,16 @@ export function renderStudyView(container: HTMLElement): void {
     streams.forEach(stream => {
       stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
     });
+
+    // 11. Reenvío suave de scroll desde la cabecera fija hacia la lista de pastillas
+    const headerEl = container.querySelector('#study-view-header');
+    const scrollListEl = container.querySelector('#study-tasks-list');
+    if (headerEl && scrollListEl) {
+      headerEl.addEventListener('wheel', (e: Event) => {
+        const we = e as WheelEvent;
+        scrollListEl.scrollTop += we.deltaY;
+      }, { passive: true });
+    }
   }
 
   render();

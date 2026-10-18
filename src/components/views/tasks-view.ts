@@ -21,42 +21,47 @@ export function renderTasksView(container: HTMLElement): void {
     // Display tasks strictly for the connected student's grade
     const displayedTasks = tasks.filter(t => !t.gradeKey || t.gradeKey === currentGrade || t.gradeKey === 'both');
 
-    container.innerHTML = `
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        <!-- Section Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-xl font-display font-bold text-slate-900">
-                ${t('tasks.title')}
-              </h2>
-              <span class="text-xs px-2.5 py-0.5 rounded-full ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-300'} font-bold">
-                ${currentStudent?.name || 'Estudiante'} • ${currentStudent?.gradeLevel || '1º de ESO'}
-              </span>
-              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">${t('tasks.driveIntegration')}</span>
-            </div>
-            <p class="text-xs text-slate-500 mt-0.5">${t('tasks.subtitle')}</p>
-          </div>
+    const currentListEl = container.querySelector('#tasks-list');
+    const prevScrollTop = currentListEl ? currentListEl.scrollTop : 0;
 
-          <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-            <button id="btn-view-project-prompt" class="px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipPromptProject')}">
-              <span>📄</span>
-              <span>${t('tasks.btnPromptProject')}</span>
-            </button>
-            <button id="btn-view-project-curricular" class="px-3 py-2 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipCurricularDirective')}">
-              <span>🏛️</span>
-              <span>${t('tasks.btnCurricularDirective')}</span>
-            </button>
-            <button id="btn-new-task" class="px-4 py-2 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
-              <span>＋</span>
-              <span>${t('tasks.newTask')}</span>
-            </button>
+    container.innerHTML = `
+      <div class="flex-1 flex flex-col min-h-0 h-full max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Cabecera fija de la vista de Trabajos (mantenida fija en la parte superior) -->
+        <div id="tasks-view-header" class="flex-shrink-0 pt-4 pb-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-lg sm:text-xl font-display font-bold text-slate-900">
+                  ${t('tasks.title')}
+                </h2>
+                <span class="text-xs px-2.5 py-0.5 rounded-full ${currentGrade === '1eso' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-purple-100 text-purple-800 border border-purple-300'} font-bold">
+                  ${currentStudent?.name || 'Estudiante'} • ${currentStudent?.gradeLevel || '1º de ESO'}
+                </span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 border border-cyan-200 font-semibold">${t('tasks.driveIntegration')}</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">${t('tasks.subtitle')}</p>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+              <button id="btn-view-project-prompt" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipPromptProject')}">
+                <span>📄</span>
+                <span>${t('tasks.btnPromptProject')}</span>
+              </button>
+              <button id="btn-view-project-curricular" class="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold transition-all flex items-center gap-1.5" title="${t('tasks.tooltipCurricularDirective')}">
+                <span>🏛️</span>
+                <span>${t('tasks.btnCurricularDirective')}</span>
+              </button>
+              <button id="btn-new-task" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center gap-1.5">
+                <span>＋</span>
+                <span>${t('tasks.newTask')}</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Task Deliverables List -->
-        <div class="space-y-6">
+        <!-- Task Deliverables List: Solo se mueven las pastillas -->
+        <div class="flex-1 min-h-0 overflow-y-auto space-y-5 pr-1 pb-16 pt-1" id="tasks-list">
           ${
             displayedTasks.length === 0
               ? `
@@ -465,6 +470,22 @@ export function renderTasksView(container: HTMLElement): void {
       modal?.classList.add('hidden');
       loadData();
     });
+
+    // Reenvío suave de scroll desde la cabecera fija hacia la lista de pastillas
+    const headerEl = container.querySelector('#tasks-view-header');
+    const scrollListEl = container.querySelector('#tasks-list');
+    if (headerEl && scrollListEl) {
+      headerEl.addEventListener('wheel', (e: Event) => {
+        const we = e as WheelEvent;
+        scrollListEl.scrollTop += we.deltaY;
+      }, { passive: true });
+    }
+
+    // Restaurar posición de scroll de la lista tras actualizar datos
+    const newListEl = container.querySelector('#tasks-list');
+    if (newListEl && prevScrollTop > 0) {
+      newListEl.scrollTop = prevScrollTop;
+    }
   }
 
   function calculateTaskScore(task: ProjectTask): number {
