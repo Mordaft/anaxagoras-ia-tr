@@ -210,10 +210,16 @@ export async function renderPlanificationModal(
               </div>
 
               <!-- Input de diálogo interactivo -->
-              <form id="plan-dialog-form" class="flex gap-2">
+              <form id="plan-dialog-form" class="flex gap-2" autocomplete="off">
                 <input 
                   type="text" 
                   id="plan-dialog-input" 
+                  name="plan_dialog_query"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="true"
+                  data-lpignore="true"
                   placeholder="Escribe aquí un cambio (ej: 'El profe nos ha dicho que hagamos antes los problemas de Matemáticas')..."
                   class="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                 />

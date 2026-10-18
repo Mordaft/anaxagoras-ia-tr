@@ -697,11 +697,18 @@ export function renderStudyView(container: HTMLElement): void {
 
                 <!-- Chat Input Area -->
                 <div class="p-4 bg-white border-t border-slate-200">
-                  <form data-topic-id="${topic.id}" class="chat-form flex items-center gap-2">
+                  <form data-topic-id="${topic.id}" class="chat-form flex items-center gap-2" autocomplete="off">
                     <input 
                       type="text" 
                       id="chat-input-${topic.id}" 
+                      name="anaxagoras_socratic_${topic.id}"
                       placeholder="${t('study.inputPlaceholder')}" 
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      spellcheck="true"
+                      data-lpignore="true"
+                      data-form-type="other"
                       required
                       class="chat-input flex-1 text-sm px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                     />
